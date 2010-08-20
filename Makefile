@@ -1,22 +1,22 @@
-CXX		= g++
-MOC		= moc-qt4
-STRIP		= strip
-INSTALL		= install
+CXX		?= g++
+MOC		?= moc-qt4
+STRIP		?= strip
+INSTALL		?= install
 
-CXXFLAGS	= -Os -Wall -fno-exceptions \
-		  -I./moc \
-		  -I/usr/include \
-		  -I/usr/include/QtCore \
-		  -I/usr/include/QtGui \
-		  -I/usr/include/qt4 \
-		  -I/usr/include/qt4/QtCore \
-		  -I/usr/include/qt4/QtGui
+CXXFLAGS	?= -Os -Wall -fno-exceptions \
+		   -I./moc \
+		   -I/usr/include \
+		   -I/usr/include/QtCore \
+		   -I/usr/include/QtGui \
+		   -I/usr/include/qt4 \
+		   -I/usr/include/qt4/QtCore \
+		   -I/usr/include/qt4/QtGui
 CXXFLAGS	+= -DNULL=0 -DPREFIX=$(PREFIX)
-LDFLAGS		= -L/usr/lib \
+LDFLAGS		?= -L/usr/lib \
 		  -L/usr/lib/qt4
-LIBS		= -lQtCore -lQtGui
-DESTDIR		=
-PREFIX		= /usr
+LIBS		?= -lQtCore -lQtGui
+DESTDIR		?=
+PREFIX		?= /usr
 
 BIN		= pwrtray
 BATTERY		= battery.cpp battery_n810.cpp battery_pbook.cpp
