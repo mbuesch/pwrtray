@@ -32,11 +32,11 @@ BatteryN810 * BatteryN810::probe()
 int BatteryN810::maxCharge()
 {
 	//TODO
-	return 0;
+	return 1;
 }
 
 int BatteryN810::currentCharge()
 {
 	//TODO
-	return 0;
+	return 1;
 }
