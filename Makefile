@@ -63,7 +63,7 @@ clean:
 	rm -Rf dep obj moc core *~ $(BIN)
 
 install: $(BIN)
-	$(INSTALL) -d -g0 -o0 -m755 $(DESTDIR)$(PREFIX)/share/pwrtray/
-	$(INSTALL) -d -g0 -o0 -m755 $(DESTDIR)$(PREFIX)/bin/
-	$(INSTALL) -g0 -o0 -m644 ./bulb.png $(DESTDIR)$(PREFIX)/share/pwrtray/
-	$(INSTALL) -g0 -o0 -m755 $(BIN) $(DESTDIR)$(PREFIX)/bin/
+	$(INSTALL) -d -m755 $(DESTDIR)$(PREFIX)/share/pwrtray/
+	$(INSTALL) -d -m755 $(DESTDIR)$(PREFIX)/bin/
+	$(INSTALL) -m644 ./bulb.png $(DESTDIR)$(PREFIX)/share/pwrtray/
+	$(INSTALL) -m755 $(BIN) $(DESTDIR)$(PREFIX)/bin/
