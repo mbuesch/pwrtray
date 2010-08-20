@@ -23,6 +23,12 @@
 
 #include <iostream>
 
+#include <time.h>
+#include <sys/time.h>
+#include <errno.h>
+#include <string.h>
+
+
 using namespace std;
 
 
@@ -154,14 +160,46 @@ void TrayIcon::backlightStateChanged()
 		window->updateBacklightSlider();
 }
 
+static void msleep(unsigned int msecs)
+{
+	int err;
+	struct timespec time;
+
+	time.tv_sec = 0;
+	while (msecs >= 1000) {
+		time.tv_sec++;
+		msecs -= 1000;
+	}
+	time.tv_nsec = msecs;
+	time.tv_nsec *= 1000000;
+	do {
+		err = nanosleep(&time, &time);
+	} while (err && errno == EINTR);
+	if (err) {
+		cerr << "nanosleep() failed with: "
+		     << strerror(errno) << endl;
+	}
+}
+
+static bool waitForSystray()
+{
+	unsigned int count = 0;
+	while (!QSystemTrayIcon::isSystemTrayAvailable()) {
+		if (count++ >= 100) {
+			QMessageBox::critical(NULL, "No systray found",
+					      "Could not find a systray.");
+			return false;
+		}
+		msleep(100);
+	}
+	return true;
+}
+
 int main(int argc, char **argv)
 {
 	QApplication app(argc, argv);
-	if (!QSystemTrayIcon::isSystemTrayAvailable()) {
-		QMessageBox::critical(NULL, "No systray found",
-				      "Could not find a systray.");
+	if (!waitForSystray())
 		return 1;
-	}
 	TrayIcon icon;
 	icon.show();
 	if (!icon.init())
