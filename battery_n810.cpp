@@ -14,9 +14,17 @@
 
 #include "battery_n810.h"
 
+#include <iostream>
 
-BatteryN810::BatteryN810()
+using namespace std;
+
+
+BatteryN810::BatteryN810(SysFsFile *chgFile)
+ : Battery (10000)
+ , chargeFile (chgFile)
 {
+	update();
+	timer->start();
 }
 
 BatteryN810::~BatteryN810()
@@ -25,18 +33,37 @@ BatteryN810::~BatteryN810()
 
 BatteryN810 * BatteryN810::probe()
 {
-	//TODO
-	return new BatteryN810;
+	SysFsFile *charge = SysFsFile::openFile("/devices/platform/n810bm/batt_charge");
+	if (!charge)
+		return NULL;
+	return new BatteryN810(charge);
+}
+
+void BatteryN810::update()
+{
+	int value;
+	bool valueChanged = false;
+
+	if (!chargeFile->readInt(&value)) {
+		cerr << "WARNING: Failed to read battery charge file" << endl;
+		return;
+	}
+	if (value != curChg)
+		valueChanged = true;
+	curChg = value;
+
+	if (valueChanged)
+		emit stateChanged();
 }
 
 int BatteryN810::maxCharge()
 {
-	//TODO
-	return 1;
+	return 100;
 }
 
 int BatteryN810::currentCharge()
 {
-	//TODO
-	return 1;
+	return curChg;
 }
+
+#include "battery_n810.moc"

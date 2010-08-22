@@ -160,6 +160,12 @@ void TrayIcon::backlightStateChanged()
 		window->updateBacklightSlider();
 }
 
+bool Application::x11EventFilter(XEvent *event)
+{
+//cout << "XEV" << endl;
+	return QApplication::x11EventFilter(event);
+}
+
 static void msleep(unsigned int msecs)
 {
 	int err;
@@ -197,7 +203,7 @@ static bool waitForSystray()
 
 int main(int argc, char **argv)
 {
-	QApplication app(argc, argv);
+	Application app(argc, argv);
 	if (!waitForSystray())
 		return 1;
 	TrayIcon icon;

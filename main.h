@@ -1,6 +1,7 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
+#include <QtGui/QApplication>
 #include <QtGui/QSystemTrayIcon>
 #include <QtGui/QMenu>
 #include <QtGui/QSlider>
@@ -62,6 +63,19 @@ protected:
 	TrayWindow *window;
 	Battery *batt;
 	Backlight *backl;
+};
+
+class Application : public QApplication
+{
+	Q_OBJECT
+public:
+	Application(int argc, char **argv)
+		 : QApplication (argc, argv)
+		{ }
+	virtual ~Application()
+		{ }
+
+	bool x11EventFilter(XEvent *event);
 };
 
 #endif /* MAIN_H_ */
