@@ -29,6 +29,7 @@ BatteryN810::BatteryN810(SysFsFile *chgFile)
 
 BatteryN810::~BatteryN810()
 {
+	delete chargeFile;
 }
 
 BatteryN810 * BatteryN810::probe()

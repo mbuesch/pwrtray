@@ -65,17 +65,4 @@ protected:
 	Backlight *backl;
 };
 
-class Application : public QApplication
-{
-	Q_OBJECT
-public:
-	Application(int argc, char **argv)
-		 : QApplication (argc, argv)
-		{ }
-	virtual ~Application()
-		{ }
-
-	bool x11EventFilter(XEvent *event);
-};
-
 #endif /* MAIN_H_ */
