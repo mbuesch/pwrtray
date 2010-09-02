@@ -12,8 +12,7 @@
 #define stringify(x)		__stringify(x)
 
 class TrayIcon;
-class Battery;
-class Backlight;
+class Backend;
 
 
 class TrayWindow : public QMenu
@@ -23,8 +22,8 @@ public:
 	TrayWindow(TrayIcon *_tray);
 	virtual ~TrayWindow();
 
-	void updateBattBar();
-	void updateBacklightSlider();
+	void updateBattBar(struct pt_message *msg = NULL);
+	void updateBacklightSlider(struct pt_message *msg = NULL);
 
 protected:
 	virtual void showEvent(QShowEvent *event);
@@ -48,21 +47,17 @@ public:
 
 	bool init();
 
-	Battery * battery()
-		{ return batt; }
-
-	Backlight * backlight()
-		{ return backl; }
+	Backend * getBackend()
+		{ return backend; }
 
 protected slots:
 	void wasActivated(QSystemTrayIcon::ActivationReason reason);
-	void batteryStateChanged();
-	void backlightStateChanged();
+	void batteryStateChanged(struct pt_message *msg);
+	void backlightStateChanged(struct pt_message *msg);
 
 protected:
 	TrayWindow *window;
-	Battery *batt;
-	Backlight *backl;
+	Backend *backend;
 };
 
 #endif /* MAIN_H_ */

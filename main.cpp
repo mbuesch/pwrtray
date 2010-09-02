@@ -13,8 +13,7 @@
  */
 
 #include "main.h"
-#include "battery.h"
-#include "backlight.h"
+#include "backend.h"
 
 #include <QtGui/QApplication>
 #include <QtGui/QMessageBox>
@@ -62,30 +61,52 @@ TrayWindow::~TrayWindow()
 {
 }
 
-void TrayWindow::updateBattBar()
+void TrayWindow::updateBattBar(struct pt_message *msg)
 {
-	Battery *batt = tray->battery();
-	if (batt->onAC())
+	struct pt_message m;
+	int err;
+
+	if (!msg) {
+		err = tray->getBackend()->getBatteryState(&m);
+		if (err) {
+			cerr << "Failed to fetch battery state" << endl;
+			return;
+		}
+		msg = &m;
+	}
+
+	if (msg->bat_stat.flags & htonl(PT_BAT_FLG_ONAC))
 		battLabel->setText("Batt (AC):");
 	else
 		battLabel->setText("Batt:");
-	battBar->setMinimum(batt->minCharge());
-	battBar->setMaximum(batt->maxCharge());
-	battBar->setValue(batt->currentCharge());
+	battBar->setMinimum(ntohl(msg->bat_stat.min_charge));
+	battBar->setMaximum(ntohl(msg->bat_stat.max_charge));
+	battBar->setValue(ntohl(msg->bat_stat.charge));
 }
 
-void TrayWindow::updateBacklightSlider()
+void TrayWindow::updateBacklightSlider(struct pt_message *msg)
 {
-	Backlight *backlight = tray->backlight();
-	brightness->setMinimum(backlight->minBrightness());
-	brightness->setMaximum(backlight->maxBrightness());
-	brightness->setSingleStep(backlight->brightnessStep());
-	brightness->setValue(backlight->currentBrightness());
+	struct pt_message m;
+	int err;
+
+	if (!msg) {
+		err = tray->getBackend()->getBacklightState(&m);
+		if (err) {
+			cerr << "Failed to fetch backlight state" << endl;
+			return;
+		}
+		msg = &m;
+	}
+
+	brightness->setMinimum(ntohl(msg->bl_stat.min_brightness));
+	brightness->setMaximum(ntohl(msg->bl_stat.max_brightness));
+	brightness->setSingleStep(ntohl(msg->bl_stat.brightness_step));
+	brightness->setValue(ntohl(msg->bl_stat.brightness));
 }
 
 void TrayWindow::desiredBrightnessChanged(int newVal)
 {
-	tray->backlight()->setBrightness(newVal);
+	tray->getBackend()->setBacklight(newVal);
 }
 
 void TrayWindow::showEvent(QShowEvent *event)
@@ -99,48 +120,39 @@ void TrayWindow::showEvent(QShowEvent *event)
 
 TrayIcon::TrayIcon()
  : window (NULL)
- , batt (NULL)
- , backl (NULL)
+ , backend (NULL)
 {
 	setIcon(QIcon(stringify(PREFIX) "/share/pwrtray/bulb.png"));
 }
 
 TrayIcon::~TrayIcon()
 {
-	delete batt;
-	delete backl;
 	delete window;
+	delete backend;
 }
 
 bool TrayIcon::init()
 {
-	batt = Battery::probe();
-	if (!batt) {
-		QMessageBox::critical(NULL, "Battery init failed",
-				      "Failed to initialize battery meter");
-		goto error;
-	}
-	backl = Backlight::probe();
-	if (!backl) {
-		QMessageBox::critical(NULL, "Backlight init failed",
-				      "Failed to initialize backlight");
-		goto error;
+	int err;
+
+	backend = new Backend();
+	err = backend->connectToBackend();
+	if (err) {
+		delete backend;
+		backend = NULL;
+		return false;
 	}
 
 	window = new TrayWindow(this);
 
 	connect(this, SIGNAL(activated(QSystemTrayIcon::ActivationReason)),
 		this, SLOT(wasActivated(QSystemTrayIcon::ActivationReason)));
-	connect(batt, SIGNAL(stateChanged()),
-		this, SLOT(batteryStateChanged()));
+	connect(backend, SIGNAL(batteryStateChanged(struct pt_message *)),
+		this, SLOT(batteryStateChanged(struct pt_message *)));
+	connect(backend, SIGNAL(backlightStateChanged(struct pt_message *)),
+		this, SLOT(backlightStateChanged(struct pt_message *)));
 
 	return true;
-error:
-	delete batt;
-	delete backl;
-	batt = NULL;
-	backl = NULL;
-	return false;
 }
 
 void TrayIcon::wasActivated(ActivationReason reason)
@@ -148,13 +160,13 @@ void TrayIcon::wasActivated(ActivationReason reason)
 	window->show();
 }
 
-void TrayIcon::batteryStateChanged()
+void TrayIcon::batteryStateChanged(struct pt_message *msg)
 {
 	if (window->isVisible())
 		window->updateBattBar();
 }
 
-void TrayIcon::backlightStateChanged()
+void TrayIcon::backlightStateChanged(struct pt_message *msg)
 {
 	if (window->isVisible())
 		window->updateBacklightSlider();

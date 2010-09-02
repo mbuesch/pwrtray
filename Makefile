@@ -19,9 +19,7 @@ DESTDIR		?=
 PREFIX		?= /usr
 
 BIN		= pwrtray
-BATTERY		= battery.cpp battery_n810.cpp battery_pbook.cpp
-BACKLIGHT	= backlight.cpp backlight_omapfb.cpp backlight_class.cpp
-SRCS		= main.cpp fileaccess.cpp $(BATTERY) $(BACKLIGHT)
+SRCS		= main.cpp backend.cpp
 
 V		= @             # Verbose build:  make V=1
 Q		= $(V:1=)
