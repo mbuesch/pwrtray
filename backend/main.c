@@ -21,6 +21,7 @@
 #include "list.h"
 #include "battery.h"
 #include "backlight.h"
+#include "autodim.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -45,8 +46,10 @@ struct client {
 static int socket_fd = -1;
 static int sig_block_count;
 static LIST_HEAD(client_list);
+
 static struct battery *battery;
 static struct backlight *backlight;
+static struct autodim *autodim;
 
 
 static int send_message(struct client *c, struct pt_message *msg, uint16_t flags)
@@ -95,7 +98,21 @@ static void received_message(struct client *c, struct pt_message *msg)
 		break;
 	case PTREQ_BL_SETBRIGHTNESS:
 		err = backlight->set_brightness(backlight, msg->bl_set.brightness);
-		reply.error.code = err;
+		reply.error.code = htonl(err);
+		send_message(c, &reply, err ? 0 : PT_FLG_OK);
+		break;
+	case PTREQ_BL_AUTODIM:
+		if (msg->flags & htons(PT_FLG_ENABLE)) {
+			err = -ENOMEM;
+			autodim = autodim_alloc();
+			if (autodim)
+				err = autodim_init(autodim, backlight);
+		} else {
+			autodim_destroy(autodim);
+			autodim_free(autodim);
+			autodim = NULL;
+		}
+		reply.error.code = htonl(err);
 		send_message(c, &reply, err ? 0 : PT_FLG_OK);
 		break;
 	case PTREQ_BAT_GETSTATE:
@@ -352,6 +369,10 @@ static void shutdown_cleanup(void)
 	block_signals();
 
 	force_disconnect_clients();
+
+	autodim_destroy(autodim);
+	autodim_free(autodim);
+	autodim = NULL;
 
 	backlight_destroy(backlight);
 	backlight = NULL;

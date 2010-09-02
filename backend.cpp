@@ -233,4 +233,15 @@ int Backend::setBacklight(int value)
 	return sendMessageSyncReply(&msg);
 }
 
+int Backend::setBacklightAutodim(bool enable)
+{
+	struct pt_message msg;
+
+	memset(&msg, 0, sizeof(msg));
+	msg.id = htons(PTREQ_BL_AUTODIM);
+	msg.flags = htons(PT_FLG_ENABLE);
+
+	return sendMessageSyncReply(&msg);
+}
+
 #include "backend.moc"

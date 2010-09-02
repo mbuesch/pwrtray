@@ -20,6 +20,7 @@ enum {
 	/* Backlight controls */
 	PTREQ_BL_GETSTATE		= 0x100,
 	PTREQ_BL_SETBRIGHTNESS,
+	PTREQ_BL_AUTODIM,
 
 	/* Battery controls */
 	PTREQ_BAT_GETSTATE		= 0x200,

@@ -142,6 +142,9 @@ bool TrayIcon::init()
 		backend = NULL;
 		return false;
 	}
+	err = backend->setBacklightAutodim();
+	if (err)
+		cerr << "Failed to initialize auto-dimming" << endl;
 
 	window = new TrayWindow(this);
 
