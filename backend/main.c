@@ -40,11 +40,13 @@
 struct client {
 	int fd;
 	int notifications_enabled;
+	int requested_autodim;
 	struct list_head list;
 };
 
 static int socket_fd = -1;
 static int sig_block_count;
+static int autodim_count;
 static LIST_HEAD(client_list);
 
 static struct battery *battery;
@@ -71,6 +73,34 @@ static int send_message(struct client *c, struct pt_message *msg, uint16_t flags
 	}
 
 	return 0;
+}
+
+static int enable_autodim(void)
+{
+	int err = 0;
+
+	assert(autodim_count >= 0);
+	if (autodim_count++ == 0) {
+		assert(!autodim);
+		err = -ENOMEM;
+		autodim = autodim_alloc();
+		if (autodim)
+			err = autodim_init(autodim, backlight);
+		if (err)
+			autodim_count--;
+	}
+
+	return err;
+}
+
+static void disable_autodim(void)
+{
+	if (--autodim_count == 0) {
+		autodim_destroy(autodim);
+		autodim_free(autodim);
+		autodim = NULL;
+	}
+	assert(autodim_count >= 0);
 }
 
 static void received_message(struct client *c, struct pt_message *msg)
@@ -102,15 +132,15 @@ static void received_message(struct client *c, struct pt_message *msg)
 		send_message(c, &reply, err ? 0 : PT_FLG_OK);
 		break;
 	case PTREQ_BL_AUTODIM:
+		err = 0;
 		if (msg->flags & htons(PT_FLG_ENABLE)) {
-			err = -ENOMEM;
-			autodim = autodim_alloc();
-			if (autodim)
-				err = autodim_init(autodim, backlight);
+			err = enable_autodim();
+			if (!err)
+				c->requested_autodim = 1;
 		} else {
-			autodim_destroy(autodim);
-			autodim_free(autodim);
-			autodim = NULL;
+			if (c->requested_autodim)
+				disable_autodim();
+			c->requested_autodim = 0;
 		}
 		reply.error.code = htonl(err);
 		send_message(c, &reply, err ? 0 : PT_FLG_OK);
@@ -142,10 +172,9 @@ static struct client * new_client(int fd)
 {
 	struct client *c;
 
-	c = malloc(sizeof(*c));
+	c = zalloc(sizeof(*c));
 	if (!c)
 		return NULL;
-	memset(c, 0, sizeof(*c));
 
 	c->fd = fd;
 	INIT_LIST_HEAD(&c->list);
@@ -373,6 +402,7 @@ static void shutdown_cleanup(void)
 	autodim_destroy(autodim);
 	autodim_free(autodim);
 	autodim = NULL;
+	autodim_count = 0;
 
 	backlight_destroy(backlight);
 	backlight = NULL;
@@ -403,8 +433,15 @@ static void signal_async_io(int signal)
 	recv_clients();
 }
 
+static void signal_input_event(int signal)
+{
+	if (autodim)
+		autodim_handle_input_event(autodim);
+}
+
 #define sigset_set_blocked_sigs(setp) do {	\
 		sigemptyset((setp));		\
+		sigaddset((setp), SIGUSR1);	\
 		sigaddset((setp), SIGIO);	\
 		sigaddset((setp), SIGINT);	\
 		sigaddset((setp), SIGTERM);	\
@@ -454,6 +491,7 @@ static int setup_signal_handlers(void)
 	err |= install_sighandler(SIGTERM, signal_terminate);
 	err |= install_sighandler(SIGPIPE, signal_pipe);
 	err |= install_sighandler(SIGIO, signal_async_io);
+	err |= install_sighandler(SIGUSR1, signal_input_event);
 
 	return err ? -1 : 0;
 }

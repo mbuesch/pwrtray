@@ -153,10 +153,9 @@ struct battery * battery_powerbook_probe(void)
 	if (!info || !stat)
 		goto err_close;
 
-	bp = malloc(sizeof(*bp));
+	bp = zalloc(sizeof(*bp));
 	if (!bp)
 		goto err_close;
-	memset(bp, 0, sizeof(*bp));
 
 	bp->info_file = info;
 	bp->stat_file = stat;

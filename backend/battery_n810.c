@@ -67,10 +67,9 @@ struct battery * battery_n810_probe(void)
 	if (!charge_file)
 		goto error;
 
-	bn = malloc(sizeof(*bn));
+	bn = zalloc(sizeof(*bn));
 	if (!bn)
 		goto err_close;
-	memset(bn, 0, sizeof(*bn));
 
 	bn->charge_file = charge_file;
 

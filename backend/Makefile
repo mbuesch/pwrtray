@@ -8,7 +8,7 @@ LIBS		?= -lrt
 DESTDIR		?=
 PREFIX		?= /usr
 
-CFLAGS		+= -DPREFIX=$(PREFIX)
+CFLAGS		+= -DPREFIX=$(PREFIX) -D_GNU_SOURCE
 
 BIN		= pwrtray-backend
 BATT_SRCS	= battery.c battery_powerbook.c battery_n810.c

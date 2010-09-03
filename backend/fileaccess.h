@@ -6,6 +6,7 @@
 #include <stdarg.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <dirent.h>
 
 
 struct fileaccess {
@@ -34,6 +35,7 @@ void text_lines_free(struct list_head *lines_list);
 
 struct dir_entry {
 	char *name;
+	unsigned int type; /* DT_... */
 	struct list_head list;
 };
 

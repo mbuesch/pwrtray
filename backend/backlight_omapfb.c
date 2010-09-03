@@ -99,10 +99,9 @@ struct backlight * backlight_omapfb_probe(void)
 	if (!level_file)
 		goto error;
 
-	bo = malloc(sizeof(*bo));
+	bo = zalloc(sizeof(*bo));
 	if (!bo)
 		goto err_close;
-	memset(bo, 0, sizeof(*bo));
 
 	bo->level_file = level_file;
 	bo->max_level = max_level;

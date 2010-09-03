@@ -73,10 +73,9 @@ struct fileaccess * file_open(int flags, const char *path_fmt, ...)
 	if (!stream)
 		goto err_close;
 
-	fa = malloc(sizeof(*fa));
+	fa = zalloc(sizeof(*fa));
 	if (!fa)
 		goto err_fclose;
-	memset(fa, 0, sizeof(*fa));
 
 	fa->fd = fd;
 	fa->stream = stream;
@@ -257,6 +256,7 @@ int list_directory(struct list_head *dir_entries, const char *path_fmt, ...)
 	} dirent_buf;
 	int err;
 	struct dir_entry *de;
+	int count = 0;
 
 	va_start(ap, path_fmt);
 	vsnprintf(path, sizeof(path), path_fmt, ap);
@@ -289,11 +289,13 @@ int list_directory(struct list_head *dir_entries, const char *path_fmt, ...)
 			free(de);
 			goto error_unwind;
 		}
+		de->type = dirent->d_type;
 		list_add_tail(&de->list, dir_entries);
+		count++;
 	}
 	closedir(dir);
 
-	return 0;
+	return count;
 
 error_unwind:
 	dir_entries_free(dir_entries);

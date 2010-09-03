@@ -94,9 +94,7 @@ struct backlight * backlight_class_probe(void)
 	int err, max_brightness;
 
 	err = list_sysfs_directory(&dir_entries, BASEPATH);
-	if (err)
-		return NULL;
-	if (list_empty(&dir_entries))
+	if (err <= 0)
 		return NULL;
 	dir_entry = list_first_entry(&dir_entries, struct dir_entry, list);
 
@@ -115,10 +113,9 @@ struct backlight * backlight_class_probe(void)
 	if (!set_br_file)
 		goto err_files_close;
 
-	bc = malloc(sizeof(*bc));
+	bc = zalloc(sizeof(*bc));
 	if (!bc)
 		goto err_files_close;
-	memset(bc, 0, sizeof(*bc));
 
 	bc->actual_br_file = actual_br_file;
 	bc->set_br_file = set_br_file;
