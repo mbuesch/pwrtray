@@ -3,6 +3,7 @@
 
 #include "backend/api.h"
 
+#include <QObject>
 #include <QSocketNotifier>
 
 
