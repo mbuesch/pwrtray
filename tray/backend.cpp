@@ -13,7 +13,6 @@
  */
 
 #include "backend.h"
-#include "backend/api.h"
 
 #include <stdlib.h>
 #include <string.h>

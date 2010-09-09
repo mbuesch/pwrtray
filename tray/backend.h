@@ -1,7 +1,7 @@
 #ifndef BACKEND_H_
 #define BACKEND_H_
 
-#include "backend/api.h"
+#include "../backend/api.h"
 
 #include <QObject>
 #include <QSocketNotifier>
