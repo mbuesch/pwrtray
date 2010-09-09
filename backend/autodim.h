@@ -2,12 +2,14 @@
 #define BACKEND_AUTODIM_H_
 
 #include "backlight.h"
+#include "timer.h"
 
 
 struct autodim {
 	struct backlight *bl;
 	int *fds;
 	unsigned int nr_fds;
+	struct sleeptimer timer;
 };
 
 struct autodim * autodim_alloc(void);

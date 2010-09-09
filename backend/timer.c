@@ -24,7 +24,18 @@
 
 
 static LIST_HEAD(timer_list);
+static unsigned int id_counter;
 
+
+static inline void timer_lock(void)
+{
+	block_signals();
+}
+
+static inline void timer_unlock(void)
+{
+	unblock_signals();
+}
 
 static void timespec_add_msec(struct timespec *ts, unsigned int msec)
 {
@@ -51,31 +62,50 @@ static int timespec_bigger(const struct timespec *a, const struct timespec *b)
 	return 0;
 }
 
+static inline int timespec_after(const struct timespec *a, const struct timespec *b)
+{
+	return timespec_bigger(a, b);
+}
+
 void sleeptimer_init(struct sleeptimer *timer,
 		     sleeptimer_callback_t callback)
 {
 	memset(timer, 0, sizeof(*timer));
 	timer->callback = callback;
+	INIT_LIST_HEAD(&timer->list);
 }
 
 void sleeptimer_set_timeout_relative(struct sleeptimer *timer,
 				     unsigned int msecs)
 {
-	timer->timeout.tv_sec = 0;
-	timer->timeout.tv_nsec = 0;
+	int err;
+
+	err = clock_gettime(CLOCK_MONOTONIC, &timer->timeout);
+	if (err) {
+		logerr("WARNING: clock_gettime() failed: %s\n",
+		       strerror(errno));
+		return;
+	}
 	timespec_add_msec(&timer->timeout, msecs);
 }
 
-int sleeptimer_enqueue(struct sleeptimer *timer)
+static void _sleeptimer_dequeue(struct sleeptimer *timer)
+{
+	list_del_init(&timer->list);
+}
+
+void sleeptimer_enqueue(struct sleeptimer *timer)
 {
 	struct sleeptimer *i;
 	int inserted = 0;
 
-	INIT_LIST_HEAD(&timer->list);
+	timer_lock();
 
-//FIXME
+	if (!list_empty(&timer->list))
+		_sleeptimer_dequeue(timer);
+
 	list_for_each_entry(i, &timer_list, list) {
-		if (timespec_bigger(&i->timeout, &timer->timeout)) {
+		if (timespec_after(&i->timeout, &timer->timeout)) {
 			list_add_tail(&timer->list, &i->list);
 			inserted = 1;
 			break;
@@ -83,39 +113,56 @@ int sleeptimer_enqueue(struct sleeptimer *timer)
 	}
 	if (!inserted)
 		list_add_tail(&timer->list, &timer_list);
+	timer->id = id_counter++;
 
-	return 0;
+	timer_unlock();
 }
 
 void sleeptimer_dequeue(struct sleeptimer *timer)
 {
-	list_del(&timer->list);
+	timer_lock();
+	_sleeptimer_dequeue(timer);
+	timer_unlock();
 }
 
 int sleeptimer_wait_next(void)
 {
-	struct sleeptimer *next_timer;
+	struct timespec timeout;
+	struct sleeptimer *timer = NULL, *new_timer;
+	unsigned int timer_id = 0;
 	int err;
 
-	if (list_empty(&timer_list))
+	timer_lock();
+	if (!list_empty(&timer_list)) {
+		timer = list_first_entry(&timer_list, struct sleeptimer, list);
+		timeout = timer->timeout;
+		timer_id = timer->id;
+	}
+	timer_unlock();
+	if (!timer)
 		return -ENOENT;
-	next_timer = list_first_entry(&timer_list, struct sleeptimer, list);
 
 	while (1) {
-		err = nanosleep(&next_timer->timeout, &next_timer->timeout);
+		err = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME,
+				      &timeout, NULL);
 		if (!err)
 			break;
-		if (err && errno != EINTR) {
-			logerr("WARNING: nanosleep() failed: %s\n",
+		if (errno == EAGAIN)
+			continue;
+		if (errno != EINTR) {
+			logerr("WARNING: clock_nanosleep() failed: %s\n",
 			       strerror(errno));
 			break;
 		}
 	}
 
-	sleeptimer_dequeue(next_timer);
-	block_signals();
-	next_timer->callback(next_timer);
-	unblock_signals();
+	timer_lock();
+	if (!list_empty(&timer_list)) {
+		new_timer = list_first_entry(&timer_list, struct sleeptimer, list);
+		if (new_timer == timer && new_timer->id == timer_id)
+			timer->callback(timer);
+	}
+	timer_unlock();
 
 	return 0;
 }

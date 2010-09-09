@@ -184,8 +184,10 @@ static struct client * new_client(int fd)
 
 static void remove_client(struct client *c)
 {
-	logdebug("Client disconnected, fd=%d\n", c->fd);
+	if (c->requested_autodim)
+		disable_autodim();
 	list_del(&c->list);
+	logdebug("Client disconnected, fd=%d\n", c->fd);
 	free(c);
 }
 

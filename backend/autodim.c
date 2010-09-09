@@ -24,6 +24,19 @@
 #include <errno.h>
 
 
+#define AUTODIM_TIMER_INTERVAL	1000
+
+
+static void autodim_timer_callback(struct sleeptimer *timer)
+{
+	struct autodim *ad = container_of(timer, struct autodim, timer);
+
+printf("AUTODIM TIMER\n");
+	//TODO
+	sleeptimer_set_timeout_relative(timer, AUTODIM_TIMER_INTERVAL);
+	sleeptimer_enqueue(timer);
+}
+
 struct autodim * autodim_alloc(void)
 {
 	struct autodim *ad;
@@ -81,6 +94,10 @@ int autodim_init(struct autodim *ad, struct backlight *bl)
 	ad->nr_fds = i;
 	dir_entries_free(&dir_entries);
 
+	sleeptimer_init(&ad->timer, autodim_timer_callback);
+	sleeptimer_set_timeout_relative(&ad->timer, AUTODIM_TIMER_INTERVAL);
+	sleeptimer_enqueue(&ad->timer);
+
 	logdebug("Auto-dimming enabled\n");
 
 	return 0;
@@ -101,6 +118,7 @@ void autodim_destroy(struct autodim *ad)
 	if (!ad)
 		return;
 
+	sleeptimer_dequeue(&ad->timer);
 	for (i = 0; i < ad->nr_fds; i++)
 		close(ad->fds[i]);
 	free(ad->fds);
