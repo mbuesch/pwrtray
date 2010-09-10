@@ -120,6 +120,7 @@ int autodim_init(struct autodim *ad, struct backlight *bl,
 			goto err_free_fds;
 		}
 		ad->fds[i++] = fd;
+		logverbose("Autodim: Watching input device %s\n", path);
 	}
 	ad->nr_fds = i;
 	dir_entries_free(&dir_entries);
