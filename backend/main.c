@@ -502,6 +502,8 @@ int mainloop(void)
 {
 	int err;
 
+	log_initialize();
+
 	err = setup_signal_handlers();
 	if (err)
 		goto error;
@@ -529,6 +531,7 @@ int mainloop(void)
 
 error:
 	shutdown_cleanup();
+	log_exit();
 
 	return err ? 1 : 0;
 }

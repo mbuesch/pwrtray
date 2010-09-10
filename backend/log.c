@@ -21,46 +21,67 @@
 #include <stdarg.h>
 
 
+static FILE *log_fd;
+
+
+static void write_log(FILE *fd, int prio, const char *fmt, va_list args)
+{
+	if (log_fd) {
+		vfprintf(log_fd, fmt, args);
+		fflush(log_fd);
+	} else {
+		if (cmdargs.background)
+			vsyslog(prio, fmt, args);
+		else
+			vfprintf(fd, fmt, args);
+	}
+}
+
+void log_initialize(void)
+{
+	if (cmdargs.logfile) {
+		log_fd = fopen(cmdargs.logfile, "w+");
+		if (!log_fd)
+			logerr("Failed to open logfile: %s\n", cmdargs.logfile);
+	}
+}
+
+void log_exit(void)
+{
+	if (log_fd)
+		fclose(log_fd);
+	log_fd = NULL;
+}
+
 void loginfo(const char *fmt, ...)
 {
 	va_list args;
 
-	if (cmdargs.loglevel < LOGLEVEL_INFO)
-		return;
-	va_start(args, fmt);
-	if (cmdargs.background)
-		vsyslog(LOG_MAKEPRI(LOG_DAEMON, LOG_INFO), fmt, args);
-	else
-		vfprintf(stdout, fmt, args);
-	va_end(args);
+	if (cmdargs.loglevel >= LOGLEVEL_INFO) {
+		va_start(args, fmt);
+		write_log(stdout, LOG_MAKEPRI(LOG_DAEMON, LOG_INFO), fmt, args);
+		va_end(args);
+	}
 }
 
 void logerr(const char *fmt, ...)
 {
 	va_list args;
 
-	if (cmdargs.loglevel < LOGLEVEL_ERROR)
-		return;
-	va_start(args, fmt);
-	if (cmdargs.background)
-		vsyslog(LOG_MAKEPRI(LOG_DAEMON, LOG_ERR), fmt, args);
-	else
-		vfprintf(stderr, fmt, args);
-	va_end(args);
+	if (cmdargs.loglevel >= LOGLEVEL_ERROR) {
+		va_start(args, fmt);
+		write_log(stderr, LOG_MAKEPRI(LOG_DAEMON, LOG_ERR), fmt, args);
+		va_end(args);
+	}
 }
 
 void logdebug(const char *fmt, ...)
 {
 	va_list args;
 
-	if (cmdargs.loglevel < LOGLEVEL_DEBUG)
-		return;
-	va_start(args, fmt);
-	if (cmdargs.background) {
-		vsyslog(LOG_MAKEPRI(LOG_DAEMON, LOG_DEBUG), fmt, args);
-	} else {
-		fprintf(stdout, "[debug]: ");
-		vfprintf(stdout, fmt, args);
+	if (cmdargs.loglevel >= LOGLEVEL_DEBUG) {
+		va_start(args, fmt);
+		write_log(stdout, LOG_MAKEPRI(LOG_DAEMON, LOG_DEBUG), fmt, args);
+		va_end(args);
 	}
-	va_end(args);
 }

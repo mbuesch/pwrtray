@@ -29,8 +29,9 @@ static void usage(FILE *fd, int argc, char **argv)
 	fprintf(fd, "  -B|--background             Fork into background\n");
 	fprintf(fd, "  -P|--pidfile PATH           Create a PID-file\n");
 	fprintf(fd, "  -l|--loglevel LEVEL         Set logging level\n");
-	fprintf(fd, "  -f|--force                  Force mode\n");
 	fprintf(fd, "                              0=error, 1=info, 2=debug\n");
+	fprintf(fd, "  -L|--logfile PATH           Write log to file\n");
+	fprintf(fd, "  -f|--force                  Force mode\n");
 	fprintf(fd, "\n");
 	fprintf(fd, "  -h|--help                   Print this help text\n");
 }
@@ -42,12 +43,13 @@ int parse_commandline(int argc, char **argv)
 		{ "background", no_argument, 0, 'B' },
 		{ "pidfile", required_argument, 0, 'P' },
 		{ "loglevel", required_argument, 0, 'l' },
+		{ "logfile", required_argument, 0, 'L' },
 		{ "force", no_argument, 0, 'f' },
 	};
 	int c, idx;
 
 	while (1) {
-		c = getopt_long(argc, argv, "hBP:l:f",
+		c = getopt_long(argc, argv, "hBP:l:L:f",
 				long_options, &idx);
 		if (c == -1)
 			break;
@@ -66,6 +68,9 @@ int parse_commandline(int argc, char **argv)
 				fprintf(stderr, "Failed to parse --loglevel argument.\n");
 				return -1;
 			}
+			break;
+		case 'L':
+			cmdargs.logfile = optarg;
 			break;
 		case 'f':
 			cmdargs.force = 1;

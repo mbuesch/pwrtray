@@ -11,4 +11,7 @@ void loginfo(const char *fmt, ...);
 void logerr(const char *fmt, ...);
 void logdebug(const char *fmt, ...);
 
+void log_initialize(void);
+void log_exit(void);
+
 #endif /* LOG_H_ */

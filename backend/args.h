@@ -4,6 +4,7 @@
 struct cmdline_args {
 	int background;
 	int loglevel;
+	const char *logfile;
 	const char *pidfile;
 	int force;
 };
