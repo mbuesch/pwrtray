@@ -126,3 +126,19 @@ int backlight_notify_state_change(struct backlight *b)
 
 	return 0;
 }
+
+int backlight_set_percentage(struct backlight *b, unsigned int percent)
+{
+	int bmin = b->min_brightness(b);
+	int bmax = b->max_brightness(b);
+	int err, value, range;
+
+	range = bmax - bmin;
+	value = (range * percent / 100) + bmin;
+
+	err = b->set_brightness(b, value);
+	if (!err)
+		backlight_notify_state_change(b);
+
+	return err;
+}

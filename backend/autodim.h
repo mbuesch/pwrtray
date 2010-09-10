@@ -10,10 +10,16 @@ struct autodim {
 	int *fds;
 	unsigned int nr_fds;
 	struct sleeptimer timer;
+
+	unsigned int state;
+	unsigned int bl_percent;
+	unsigned int max_percent;
+	int dim_fully_dark;
 };
 
 struct autodim * autodim_alloc(void);
-int autodim_init(struct autodim *ad, struct backlight *bl);
+int autodim_init(struct autodim *ad, struct backlight *bl,
+		 unsigned int max_percent, int dim_fully_dark);
 
 void autodim_destroy(struct autodim *ad);
 void autodim_free(struct autodim *ad);

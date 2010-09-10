@@ -57,7 +57,7 @@ void loginfo(const char *fmt, ...)
 {
 	va_list args;
 
-	if (cmdargs.loglevel >= LOGLEVEL_INFO) {
+	if (loglevel_is_info()) {
 		va_start(args, fmt);
 		write_log(stdout, LOG_MAKEPRI(LOG_DAEMON, LOG_INFO), fmt, args);
 		va_end(args);
@@ -68,7 +68,7 @@ void logerr(const char *fmt, ...)
 {
 	va_list args;
 
-	if (cmdargs.loglevel >= LOGLEVEL_ERROR) {
+	if (loglevel_is_error()) {
 		va_start(args, fmt);
 		write_log(stderr, LOG_MAKEPRI(LOG_DAEMON, LOG_ERR), fmt, args);
 		va_end(args);
@@ -79,7 +79,7 @@ void logdebug(const char *fmt, ...)
 {
 	va_list args;
 
-	if (cmdargs.loglevel >= LOGLEVEL_DEBUG) {
+	if (loglevel_is_debug()) {
 		va_start(args, fmt);
 		write_log(stdout, LOG_MAKEPRI(LOG_DAEMON, LOG_DEBUG), fmt, args);
 		va_end(args);

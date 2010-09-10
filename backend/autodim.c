@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <stdio.h>
 #include <signal.h>
 #include <errno.h>
 
@@ -27,12 +28,40 @@
 #define AUTODIM_TIMER_INTERVAL	1000
 
 
+static void autodim_set_backlight(struct autodim *ad, unsigned int percent)
+{
+	if (percent != ad->bl_percent) {
+		ad->bl_percent = percent;
+		backlight_set_percentage(ad->bl, percent);
+		logverbose("Autodim: Set backlight to %u percent.\n", percent);
+	}
+}
+
+static void autodim_handle_state(struct autodim *ad)
+{
+	if (ad->state <= 5) {
+		autodim_set_backlight(ad, ad->max_percent * 100 / 100);
+	} else if (ad->state <= 15) {
+		autodim_set_backlight(ad, ad->max_percent * 75 / 100);
+	} else if (ad->state <= 30) {
+		autodim_set_backlight(ad, ad->max_percent * 50 / 100);
+	} else if (ad->state <= 60) {
+		autodim_set_backlight(ad, ad->max_percent * 25 / 100);
+	} else {
+		if (ad->dim_fully_dark)
+			autodim_set_backlight(ad, 0);
+	}
+}
+
 static void autodim_timer_callback(struct sleeptimer *timer)
 {
 	struct autodim *ad = container_of(timer, struct autodim, timer);
 
-printf("AUTODIM TIMER\n");
-	//TODO
+	if (ad->state < 0xFFFFFFFF) {
+		ad->state++;
+		autodim_handle_state(ad);
+	}
+
 	sleeptimer_set_timeout_relative(timer, AUTODIM_TIMER_INTERVAL);
 	sleeptimer_enqueue(timer);
 }
@@ -48,7 +77,8 @@ struct autodim * autodim_alloc(void)
 	return ad;
 }
 
-int autodim_init(struct autodim *ad, struct backlight *bl)
+int autodim_init(struct autodim *ad, struct backlight *bl,
+		 unsigned int max_percent, int dim_fully_dark)
 {
 	LIST_HEAD(dir_entries);
 	struct dir_entry *dir_entry;
@@ -94,6 +124,13 @@ int autodim_init(struct autodim *ad, struct backlight *bl)
 	ad->nr_fds = i;
 	dir_entries_free(&dir_entries);
 
+	ad->max_percent = clamp(max_percent, 0, 100);
+	ad->dim_fully_dark = dim_fully_dark;
+	ad->bl_percent = max_percent;
+	err = backlight_set_percentage(ad->bl, ad->bl_percent);
+	if (err)
+		goto err_free_fds;
+
 	sleeptimer_init(&ad->timer, autodim_timer_callback);
 	sleeptimer_set_timeout_relative(&ad->timer, AUTODIM_TIMER_INTERVAL);
 	sleeptimer_enqueue(&ad->timer);
@@ -105,6 +142,7 @@ int autodim_init(struct autodim *ad, struct backlight *bl)
 err_free_fds:
 	free(ad->fds);
 	ad->fds = NULL;
+	ad->nr_fds = 0;
 err_free_dir_entries:
 	dir_entries_free(&dir_entries);
 
@@ -124,6 +162,8 @@ void autodim_destroy(struct autodim *ad)
 	free(ad->fds);
 	ad->fds = NULL;
 
+	backlight_set_percentage(ad->bl, ad->max_percent);
+
 	logdebug("Auto-dimming disabled\n");
 }
 
@@ -135,5 +175,9 @@ void autodim_free(struct autodim *ad)
 
 void autodim_handle_input_event(struct autodim *ad)
 {
-printf("INPUT EV\n");
+	logverbose("Autodim: Got input event.\n");
+	if (ad->state) {
+		ad->state = 0;
+		autodim_handle_state(ad);
+	}
 }

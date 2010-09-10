@@ -7,6 +7,7 @@
 
 #define min(a, b)		((a) < (b) ? (a) : (b))
 #define max(a, b)		((a) > (b) ? (a) : (b))
+#define clamp(v, mi, ma)	max(min(v, ma), mi)
 
 void msleep(unsigned int msecs);
 char * string_strip(char *str);

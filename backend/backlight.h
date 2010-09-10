@@ -28,4 +28,6 @@ void backlight_destroy(struct backlight *b);
 int backlight_fill_pt_message_stat(struct backlight *b, struct pt_message *msg);
 int backlight_notify_state_change(struct backlight *b);
 
+int backlight_set_percentage(struct backlight *b, unsigned int percent);
+
 #endif /* BACKEND_BACKLIGHT_H_ */
