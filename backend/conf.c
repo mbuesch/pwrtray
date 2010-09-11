@@ -113,11 +113,11 @@ int config_get_bool(struct config_file *f,
 		return _default;
 	if (strcasecmp(value, "yes") == 0 ||
 	    strcasecmp(value, "true") == 0 ||
-	    strcasecmp(value, "on"))
+	    strcasecmp(value, "on") == 0)
 		return 1;
 	if (strcasecmp(value, "no") == 0 ||
 	    strcasecmp(value, "false") == 0 ||
-	    strcasecmp(value, "off"))
+	    strcasecmp(value, "off") == 0)
 		return 0;
 	if (string_to_int(value, &i))
 		return _default;
