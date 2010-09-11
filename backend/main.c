@@ -41,13 +41,11 @@
 struct client {
 	int fd;
 	int notifications_enabled;
-	int requested_autodim;
 	struct list_head list;
 };
 
 static int socket_fd = -1;
 static int sig_block_count;
-static int autodim_count;
 static LIST_HEAD(client_list);
 
 static struct config_file *config;
@@ -80,20 +78,17 @@ static int send_message(struct client *c, struct pt_message *msg, uint16_t flags
 
 static int enable_autodim(void)
 {
-	int err = 0;
+	int err = -ENOMEM;
 
-	assert(autodim_count >= 0);
-	if (autodim_count++ == 0) {
-		assert(!autodim);
-		err = -ENOMEM;
-		autodim = autodim_alloc();
-		if (autodim)
-			err = autodim_init(autodim, backlight, config);
-		if (err) {
-			autodim_free(autodim);
-			autodim = NULL;
-			autodim_count--;
-		}
+	if (autodim)
+		return 0;
+
+	autodim = autodim_alloc();
+	if (autodim)
+		err = autodim_init(autodim, backlight, config);
+	if (err) {
+		autodim_free(autodim);
+		autodim = NULL;
 	}
 
 	return err;
@@ -101,12 +96,9 @@ static int enable_autodim(void)
 
 static void disable_autodim(void)
 {
-	if (--autodim_count == 0) {
-		autodim_destroy(autodim);
-		autodim_free(autodim);
-		autodim = NULL;
-	}
-	assert(autodim_count >= 0);
+	autodim_destroy(autodim);
+	autodim_free(autodim);
+	autodim = NULL;
 }
 
 static void received_message(struct client *c, struct pt_message *msg)
@@ -139,15 +131,10 @@ static void received_message(struct client *c, struct pt_message *msg)
 		break;
 	case PTREQ_BL_AUTODIM:
 		err = 0;
-		if (msg->flags & htons(PT_FLG_ENABLE)) {
+		if (msg->flags & htons(PT_FLG_ENABLE))
 			err = enable_autodim();
-			if (!err)
-				c->requested_autodim = 1;
-		} else {
-			if (c->requested_autodim)
-				disable_autodim();
-			c->requested_autodim = 0;
-		}
+		else
+			disable_autodim();
 		reply.error.code = htonl(err);
 		send_message(c, &reply, err ? 0 : PT_FLG_OK);
 		break;
@@ -190,8 +177,6 @@ static struct client * new_client(int fd)
 
 static void remove_client(struct client *c)
 {
-	if (c->requested_autodim)
-		disable_autodim();
 	list_del(&c->list);
 	logdebug("Client disconnected, fd=%d\n", c->fd);
 	free(c);
@@ -410,7 +395,6 @@ static void shutdown_cleanup(void)
 	autodim_destroy(autodim);
 	autodim_free(autodim);
 	autodim = NULL;
-	autodim_count = 0;
 
 	backlight_destroy(backlight);
 	backlight = NULL;
@@ -522,6 +506,10 @@ int mainloop(void)
 	backlight = backlight_probe();
 	if (!backlight)
 		goto error;
+	if (config_get_bool(config, "BACKLIGHT", "autodim_default_on", 0)) {
+		if (enable_autodim())
+			logerr("Failed to initially enable autodimming\n");
+	}
 	err = create_socket();
 	if (err)
 		goto error;
