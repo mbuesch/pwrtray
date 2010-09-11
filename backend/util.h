@@ -9,6 +9,8 @@
 #define max(a, b)		((a) > (b) ? (a) : (b))
 #define clamp(v, mi, ma)	max(min(v, ma), mi)
 
+#define ARRAY_SIZE(x)		(sizeof(x) / sizeof((x)[0]))
+
 void msleep(unsigned int msecs);
 char * string_strip(char *str);
 

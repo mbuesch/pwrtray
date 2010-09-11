@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <errno.h>
+#include <assert.h>
 
 
 #define AUTODIM_TIMER_INTERVAL	1000
@@ -39,17 +40,15 @@ static void autodim_set_backlight(struct autodim *ad, unsigned int percent)
 
 static void autodim_handle_state(struct autodim *ad)
 {
-	if (ad->state <= 5) {
-		autodim_set_backlight(ad, ad->max_percent * 100 / 100);
-	} else if (ad->state <= 15) {
-		autodim_set_backlight(ad, ad->max_percent * 75 / 100);
-	} else if (ad->state <= 30) {
-		autodim_set_backlight(ad, ad->max_percent * 50 / 100);
-	} else if (ad->state <= 60) {
-		autodim_set_backlight(ad, ad->max_percent * 25 / 100);
-	} else {
-		if (ad->dim_fully_dark)
-			autodim_set_backlight(ad, 0);
+	struct autodim_step *step;
+
+	assert(ad->state < ARRAY_SIZE(ad->steps));
+	step = &ad->steps[ad->state];
+
+	if (ad->idle_seconds >= step->second) {
+		autodim_set_backlight(ad, step->percent);
+		if (ad->state < ARRAY_SIZE(ad->steps) - 1)
+			ad->state++;
 	}
 }
 
@@ -57,8 +56,8 @@ static void autodim_timer_callback(struct sleeptimer *timer)
 {
 	struct autodim *ad = container_of(timer, struct autodim, timer);
 
-	if (ad->state < 0xFFFFFFFF) {
-		ad->state++;
+	if (ad->idle_seconds < 0xFFFFFFFF) {
+		ad->idle_seconds++;
 		autodim_handle_state(ad);
 	}
 
@@ -77,8 +76,59 @@ struct autodim * autodim_alloc(void)
 	return ad;
 }
 
+static int autodim_steps_get(struct autodim *ad, struct config_file *config)
+{
+	char *string, *s, *next;
+	unsigned int stepnr = 0;
+	int ret = 0;
+
+	string = strdup(config_get(config, "BACKLIGHT", "autodim_steps",
+				   "15/75 25/50 50/25 75/10"));
+	if (!string)
+		return -ENOMEM;
+	s = string_strip(string);
+	while (1) {
+		next = strchr(s, ' ');
+		if (next) {
+			next[0] = '\0';
+			next++;
+		}
+		if (strlen(s) == 0)
+			break;
+		if (stepnr >= ARRAY_SIZE(ad->steps)) {
+			logerr("Too many autodim_steps set in config file (max %d)\n",
+			       (int)ARRAY_SIZE(ad->steps));
+			ret = -EINVAL;
+			goto out;
+		}
+		if (sscanf(s, "%u/%u", &ad->steps[stepnr].second,
+			   &ad->steps[stepnr].percent) != 2) {
+			logerr("Failed to parse autodim_steps config value\n");
+			ret = -EINVAL;
+			goto out;
+		}
+		if (stepnr > 0) {
+			if (ad->steps[stepnr - 1].second >= ad->steps[stepnr].second) {
+				logerr("Error: autodim_steps, previous step idle-seconds "
+				       "value bigger than adjacent value\n");
+				ret = -EINVAL;
+				goto out;
+			}
+		}
+		stepnr++;
+		if (!next)
+			break;
+		s = string_strip(next);
+	}
+	ad->nr_steps = stepnr;
+out:
+	free(string);
+
+	return ret;
+}
+
 int autodim_init(struct autodim *ad, struct backlight *bl,
-		 unsigned int max_percent, int dim_fully_dark)
+		 struct config_file *config)
 {
 	LIST_HEAD(dir_entries);
 	struct dir_entry *dir_entry;
@@ -127,9 +177,15 @@ int autodim_init(struct autodim *ad, struct backlight *bl,
 	ad->nr_fds = i;
 	dir_entries_free(&dir_entries);
 
-	ad->max_percent = clamp(max_percent, 0, 100);
-	ad->dim_fully_dark = dim_fully_dark;
-	ad->bl_percent = max_percent;
+	ad->max_percent = clamp(config_get_int(config,
+					       "BACKLIGHT",
+					       "autodim_max",
+					       100),
+				0, 100);
+	ad->bl_percent = ad->max_percent;
+	err = autodim_steps_get(ad, config);
+	if (err)
+		goto err_free_fds;
 	err = backlight_set_percentage(ad->bl, ad->bl_percent);
 	if (err)
 		goto err_free_fds;
@@ -183,8 +239,7 @@ void autodim_free(struct autodim *ad)
 void autodim_handle_input_event(struct autodim *ad)
 {
 	logverbose("Autodim: Got input event.\n");
-	if (ad->state) {
-		ad->state = 0;
-		autodim_handle_state(ad);
-	}
+	ad->idle_seconds = 0;
+	ad->state = 0;
+	autodim_set_backlight(ad, ad->max_percent);
 }

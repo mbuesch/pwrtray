@@ -3,7 +3,13 @@
 
 #include "backlight.h"
 #include "timer.h"
+#include "conf.h"
 
+
+struct autodim_step {
+	unsigned int second;
+	unsigned int percent;
+};
 
 struct autodim {
 	struct backlight *bl;
@@ -11,15 +17,17 @@ struct autodim {
 	unsigned int nr_fds;
 	struct sleeptimer timer;
 
+	unsigned int idle_seconds;
 	unsigned int state;
 	unsigned int bl_percent;
 	unsigned int max_percent;
-	int dim_fully_dark;
+	struct autodim_step steps[10];
+	unsigned int nr_steps;
 };
 
 struct autodim * autodim_alloc(void);
 int autodim_init(struct autodim *ad, struct backlight *bl,
-		 unsigned int max_percent, int dim_fully_dark);
+		 struct config_file *config);
 
 void autodim_destroy(struct autodim *ad);
 void autodim_free(struct autodim *ad);

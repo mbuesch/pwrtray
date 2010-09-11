@@ -88,9 +88,12 @@ static int enable_autodim(void)
 		err = -ENOMEM;
 		autodim = autodim_alloc();
 		if (autodim)
-			err = autodim_init(autodim, backlight, 100, 0);
-		if (err)
+			err = autodim_init(autodim, backlight, config);
+		if (err) {
+			autodim_free(autodim);
+			autodim = NULL;
 			autodim_count--;
+		}
 	}
 
 	return err;

@@ -53,6 +53,8 @@ const char * config_get(struct config_file *f,
 	struct config_item *i;
 	const char *retval = _default;
 
+	if (!f || !section || !item)
+		return _default;
 	list_for_each_entry(s, &f->sections, list) {
 		if (strcmp(s->name, section) == 0) {
 			list_for_each_entry(i, &s->items, list) {
