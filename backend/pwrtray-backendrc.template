@@ -1,0 +1,10 @@
+# pwrtray-backend configuration
+
+[BACKLIGHT]
+# List of auto-dimming steps.
+#   idle-seconds/brightness-percent idle-seconds/brightness-percent ...
+# idle-seconds value must be growing.
+autodim_steps=15/75 25/50 50/25 75/10
+# Maximum brightness value set by the autodimmer
+autodim_max=100
+
