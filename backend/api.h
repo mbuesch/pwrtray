@@ -11,7 +11,8 @@ extern "C" {
 #define PT_SOCK_DIR	"/var/run/pwrtray"
 #define PT_SOCKET	PT_SOCK_DIR "/socket"
 
-#define PT_PACKED	__attribute__((__packed__))
+//#define PT_PACKED	__attribute__((__packed__))
+#define PT_PACKED
 
 enum {
 	PTREQ_PING			= 0x0,
