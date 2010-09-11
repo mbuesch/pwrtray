@@ -118,6 +118,7 @@ int Backend::sendMessageSyncReply(struct pt_message *msg)
 {
 	uint16_t id = msg->id;
 	int err;
+	QList<struct pt_message> msgs;
 
 	err = sendMessage(msg);
 	if (err)
@@ -127,12 +128,16 @@ int Backend::sendMessageSyncReply(struct pt_message *msg)
 		if (err)
 			return err;
 		if ((msg->id != id) || !(msg->flags & htons(PT_FLG_REPLY))) {
-			//FIXME better queue it up instead of delivering it synchronously.
-			processReceivedMessage(msg);
+			msgs.append(*msg);
 			continue;
 		}
 		break;
 	}
+
+	QList<struct pt_message>::iterator i;
+	for (i = msgs.begin(); i != msgs.end(); ++i)
+		processReceivedMessage(&(*i));
+
 	if (!(msg->flags & htons(PT_FLG_OK)))
 		return -ETXTBSY;
 
@@ -238,7 +243,7 @@ int Backend::setBacklightAutodim(bool enable)
 
 	memset(&msg, 0, sizeof(msg));
 	msg.id = htons(PTREQ_BL_AUTODIM);
-	msg.flags = htons(PT_FLG_ENABLE);
+	msg.flags = enable ? htons(PT_FLG_ENABLE) : 0;
 
 	return sendMessageSyncReply(&msg);
 }

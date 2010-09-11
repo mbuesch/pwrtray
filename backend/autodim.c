@@ -86,11 +86,13 @@ int autodim_init(struct autodim *ad, struct backlight *bl,
 	char path[PATH_MAX + 1];
 
 	ad->bl = bl;
+	ad->bl->autodim_enabled++;
 
 	count = list_directory(&dir_entries, "/dev/input");
 	if (count <= 0) {
 		logerr("Failed to list /dev/input\n");
-		return -ENOENT;
+		err = -ENOENT;
+		goto error;
 	}
 	ad->fds = calloc(count, sizeof(*ad->fds));
 	if (!ad->fds) {
@@ -146,6 +148,8 @@ err_free_fds:
 	ad->nr_fds = 0;
 err_free_dir_entries:
 	dir_entries_free(&dir_entries);
+error:
+	ad->bl->autodim_enabled--;
 
 	return err;
 }
@@ -156,6 +160,8 @@ void autodim_destroy(struct autodim *ad)
 
 	if (!ad)
 		return;
+
+	ad->bl->autodim_enabled--;
 
 	sleeptimer_dequeue(&ad->timer);
 	for (i = 0; i < ad->nr_fds; i++)

@@ -108,6 +108,7 @@ int backlight_fill_pt_message_stat(struct backlight *b, struct pt_message *msg)
 	msg->bl_stat.max_brightness = htonl(b->max_brightness(b));
 	msg->bl_stat.brightness_step = htonl(b->brightness_step(b));
 	msg->bl_stat.brightness = htonl(b->current_brightness(b));
+	msg->bl_stat.flags = b->autodim_enabled ? htonl(PT_BL_FLG_AUTODIM) : 0;
 
 	return 0;
 }

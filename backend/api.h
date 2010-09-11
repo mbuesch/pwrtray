@@ -34,6 +34,9 @@ enum {
 /* (struct pt_message *)->bat_stat.flags */
 #define PT_BAT_FLG_ONAC		(1 << 0) /* On AC */
 
+/* (struct pt_message *)->bl_stat.flags */
+#define PT_BL_FLG_AUTODIM	(1 << 0) /* Auto dimming enabled */
+
 /* (struct pt_message *)->flags */
 #define PT_FLG_REPLY		(1 << 0) /* This is a reply to a previous message */
 #define PT_FLG_OK		(1 << 1) /* There was no error */
@@ -44,6 +47,7 @@ struct pt_message {
 	uint16_t flags;
 	union {
 		struct { /* Backlight / LCD state */
+			uint32_t flags;
 			int32_t min_brightness;
 			int32_t max_brightness;
 			int32_t brightness_step;

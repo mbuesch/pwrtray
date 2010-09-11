@@ -18,6 +18,7 @@ struct backlight {
 
 	/* Internal */
 	struct sleeptimer timer;
+	int autodim_enabled;
 };
 
 void backlight_init(struct backlight *b);

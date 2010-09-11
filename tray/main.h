@@ -7,6 +7,7 @@
 #include <QtGui/QSlider>
 #include <QtGui/QLabel>
 #include <QtGui/QProgressBar>
+#include <QtGui/QCheckBox>
 
 #define __stringify(x)		#x
 #define stringify(x)		__stringify(x)
@@ -22,6 +23,7 @@ public:
 	TrayWindow(TrayIcon *_tray);
 	virtual ~TrayWindow();
 
+	void update();
 	void updateBattBar(struct pt_message *msg = NULL);
 	void updateBacklightSlider(struct pt_message *msg = NULL);
 
@@ -30,12 +32,14 @@ protected:
 
 protected slots:
 	void desiredBrightnessChanged(int newVal);
+	void brightnessAutoAdjChanged(int unused);
 
 protected:
 	TrayIcon *tray;
 	QProgressBar *battBar;
 	QLabel *battLabel;
 	QSlider *brightness;
+	QCheckBox *brAutoAdj;
 };
 
 class TrayIcon : public QSystemTrayIcon

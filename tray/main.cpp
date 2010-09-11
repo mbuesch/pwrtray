@@ -45,20 +45,40 @@ TrayWindow::TrayWindow(TrayIcon *_tray)
 	brightness->setOrientation(Qt::Horizontal);
 	l->addWidget(brightness, 0, 1);
 
-	battLabel = new QLabel(this);
-	l->addWidget(battLabel, 1, 0);
-	battBar = new QProgressBar(this);
-	l->addWidget(battBar, 1, 1);
+	brAutoAdj = new QCheckBox("Auto brightness", this);
+	l->addWidget(brAutoAdj, 1, 1);
 
-	updateBacklightSlider();
-	updateBattBar();
+	battLabel = new QLabel(this);
+	l->addWidget(battLabel, 3, 0);
+	battBar = new QProgressBar(this);
+	l->addWidget(battBar, 3, 1);
+
+	update();
 
 	connect(brightness, SIGNAL(valueChanged(int)),
 		this, SLOT(desiredBrightnessChanged(int)));
+
+	connect(brAutoAdj, SIGNAL(stateChanged(int)),
+		this, SLOT(brightnessAutoAdjChanged(int)));
 }
 
 TrayWindow::~TrayWindow()
 {
+}
+
+void TrayWindow::brightnessAutoAdjChanged(int unused)
+{
+	bool on = (brAutoAdj->checkState() == Qt::Checked);
+	int err = tray->getBackend()->setBacklightAutodim(on);
+	if (err)
+		cerr << "Failed to set auto-dimming" << endl;
+	brightness->setEnabled(!on);
+}
+
+void TrayWindow::update()
+{
+	updateBacklightSlider();
+	updateBattBar();
 }
 
 void TrayWindow::updateBattBar(struct pt_message *msg)
@@ -102,6 +122,8 @@ void TrayWindow::updateBacklightSlider(struct pt_message *msg)
 	brightness->setMaximum(ntohl(msg->bl_stat.max_brightness));
 	brightness->setSingleStep(ntohl(msg->bl_stat.brightness_step));
 	brightness->setValue(ntohl(msg->bl_stat.brightness));
+	brAutoAdj->setCheckState((msg->bl_stat.flags & htonl(PT_BL_FLG_AUTODIM)) ?
+				 Qt::Checked : Qt::Unchecked);
 }
 
 void TrayWindow::desiredBrightnessChanged(int newVal)
@@ -142,9 +164,6 @@ bool TrayIcon::init()
 		backend = NULL;
 		return false;
 	}
-	err = backend->setBacklightAutodim();
-	if (err)
-		cerr << "Failed to initialize auto-dimming" << endl;
 
 	window = new TrayWindow(this);
 
@@ -160,19 +179,20 @@ bool TrayIcon::init()
 
 void TrayIcon::wasActivated(ActivationReason reason)
 {
+	window->update();
 	window->show();
 }
 
 void TrayIcon::batteryStateChanged(struct pt_message *msg)
 {
 	if (window->isVisible())
-		window->updateBattBar();
+		window->updateBattBar(msg);
 }
 
 void TrayIcon::backlightStateChanged(struct pt_message *msg)
 {
 	if (window->isVisible())
-		window->updateBacklightSlider();
+		window->updateBacklightSlider(msg);
 }
 
 static void msleep(unsigned int msecs)
