@@ -179,9 +179,10 @@ int file_write_bool(struct fileaccess *fa, int value)
 	return file_write_int(fa, !!value, 0);
 }
 
-int file_read_text_lines(struct fileaccess *fa, struct list_head *lines_list)
+int file_read_text_lines(struct fileaccess *fa, struct list_head *lines_list,
+			 int strip_whitespace)
 {
-	char *lineptr = NULL;
+	char *lineptr = NULL, *str;
 	size_t size = 0;
 	ssize_t count;
 	struct text_line *tl;
@@ -205,7 +206,11 @@ int file_read_text_lines(struct fileaccess *fa, struct list_head *lines_list)
 			err = -ENOMEM;
 			goto error_unwind;
 		}
-		tl->text = strdup(lineptr);
+		if (strip_whitespace)
+			str = string_strip(lineptr);
+		else
+			str = lineptr;
+		tl->text = strdup(str);
 		if (!tl->text) {
 			err = -ENOMEM;
 			free(tl);

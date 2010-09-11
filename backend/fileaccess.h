@@ -29,7 +29,8 @@ struct text_line {
 	struct list_head list;
 };
 
-int file_read_text_lines(struct fileaccess *fa, struct list_head *lines_list);
+int file_read_text_lines(struct fileaccess *fa, struct list_head *lines_list,
+			 int strip_whitespace);
 void text_line_free(struct text_line *tl);
 void text_lines_free(struct list_head *lines_list);
 

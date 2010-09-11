@@ -17,6 +17,7 @@
 #include "args.h"
 #include "api.h"
 #include "log.h"
+#include "conf.h"
 #include "util.h"
 #include "list.h"
 #include "battery.h"
@@ -48,6 +49,8 @@ static int socket_fd = -1;
 static int sig_block_count;
 static int autodim_count;
 static LIST_HEAD(client_list);
+
+static struct config_file *config;
 
 static struct battery *battery;
 static struct backlight *backlight;
@@ -414,6 +417,9 @@ static void shutdown_cleanup(void)
 	remove_pidfile();
 	remove_socket();
 
+	config_file_free(config);
+	config = NULL;
+
 	unblock_signals();
 }
 
@@ -500,12 +506,12 @@ static int setup_signal_handlers(void)
 
 int mainloop(void)
 {
-	int err;
+	int err = -ENOMEM;
 
 	log_initialize();
 
-	err = setup_signal_handlers();
-	if (err)
+	config = config_file_parse("/etc/pwrtray-backendrc");
+	if (!config)
 		goto error;
 	battery = battery_probe();
 	if (!battery)
@@ -517,6 +523,9 @@ int mainloop(void)
 	if (err)
 		goto error;
 	err = create_pidfile();
+	if (err)
+		goto error;
+	err = setup_signal_handlers();
 	if (err)
 		goto error;
 

@@ -32,7 +32,7 @@ static int battery_powerbook_update(struct battery *b)
 	int got_ac = 0, got_max_chg = 0, got_cur_chg = 0;
 	int value_changed = 0;
 
-	err = file_read_text_lines(bp->info_file, &lines);
+	err = file_read_text_lines(bp->info_file, &lines, 0);
 	if (err || list_empty(&lines)) {
 		logerr("WARNING: Failed to read battery info file\n");
 		return -ETXTBSY;
@@ -62,7 +62,7 @@ static int battery_powerbook_update(struct battery *b)
 	}
 	text_lines_free(&lines);
 
-	err = file_read_text_lines(bp->stat_file, &lines);
+	err = file_read_text_lines(bp->stat_file, &lines, 0);
 	if (err || list_empty(&lines)) {
 		logerr("WARNING: Failed to read battery stat file\n");
 		return -ETXTBSY;

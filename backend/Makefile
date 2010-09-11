@@ -13,7 +13,7 @@ CFLAGS		+= -DPREFIX=$(PREFIX) -D_GNU_SOURCE
 BIN		= pwrtray-backend
 BATT_SRCS	= battery.c battery_powerbook.c battery_n810.c
 BL_SRCS		= backlight.c backlight_class.c backlight_omapfb.c
-SRCS		= main.c timer.c log.c args.c util.c fileaccess.c autodim.c $(BATT_SRCS) $(BL_SRCS)
+SRCS		= main.c timer.c log.c args.c conf.c util.c fileaccess.c autodim.c $(BATT_SRCS) $(BL_SRCS)
 
 V		= @             # Verbose build:  make V=1
 Q		= $(V:1=)
