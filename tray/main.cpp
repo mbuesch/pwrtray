@@ -108,6 +108,7 @@ void TrayWindow::updateBacklightSlider(struct pt_message *msg)
 {
 	struct pt_message m;
 	int err;
+	unsigned int step;
 
 	if (!msg) {
 		err = tray->getBackend()->getBacklightState(&m);
@@ -118,9 +119,10 @@ void TrayWindow::updateBacklightSlider(struct pt_message *msg)
 		msg = &m;
 	}
 
-	brightness->setMinimum(ntohl(msg->bl_stat.min_brightness));
+	step = ntohl(msg->bl_stat.brightness_step);
+	brightness->setSingleStep(step);
+	brightness->setMinimum(max(step, (unsigned int)ntohl(msg->bl_stat.min_brightness)));
 	brightness->setMaximum(ntohl(msg->bl_stat.max_brightness));
-	brightness->setSingleStep(ntohl(msg->bl_stat.brightness_step));
 	brightness->setValue(ntohl(msg->bl_stat.brightness));
 	brAutoAdj->setCheckState((msg->bl_stat.flags & htonl(PT_BL_FLG_AUTODIM)) ?
 				 Qt::Checked : Qt::Unchecked);
