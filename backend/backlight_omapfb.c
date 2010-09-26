@@ -23,6 +23,23 @@
 #define BASEPATH	"/devices/platform/omapfb/panel"
 
 
+static int omapfb_write_brightness(struct backlight_omapfb *bo)
+{
+	int err, level;
+
+	if (bo->locked)
+		level = 0;
+	else
+		level = bo->current_level;
+
+	err = file_write_int(bo->level_file, level, 10);
+	if (err)
+		return err;
+	if (level == 0) {
+		//TODO disable screen
+	}
+}
+
 static int backlight_omapfb_max_brightness(struct backlight *b)
 {
 	struct backlight_omapfb *bo = container_of(b, struct backlight_omapfb, backlight);
@@ -44,12 +61,36 @@ static int backlight_omapfb_set_brightness(struct backlight *b, int value)
 
 	value = min(b->max_brightness(b), value);
 	value = max(b->min_brightness(b), value);
-	err = file_write_int(bo->level_file, value, 10);
+	bo->current_level = value;
+	err = omapfb_write_brightness(bo);
 	if (err)
 		return err;
-	bo->current_level = value;
 
 	return b->update(b);
+}
+
+static int backlight_omapfb_screen_lock(struct backlight *b, int lock)
+{
+	struct backlight_omapfb *bo = container_of(b, struct backlight_omapfb, backlight);
+	int err;
+
+	lock = !!lock;
+	if (lock == bo->locked)
+		return 0;
+	bo->locked = lock;
+	err = omapfb_write_brightness(bo);
+	if (err)
+		return err;
+	backlight_notify_state_change(b);
+
+	return 0;
+}
+
+static int backlight_omapfb_screen_is_locked(struct backlight *b)
+{
+	struct backlight_omapfb *bo = container_of(b, struct backlight_omapfb, backlight);
+
+	return bo->locked;
 }
 
 static int backlight_omapfb_update(struct backlight *b)
@@ -110,6 +151,8 @@ struct backlight * backlight_omapfb_probe(void)
 	bo->backlight.max_brightness = backlight_omapfb_max_brightness;
 	bo->backlight.current_brightness = backlight_omapfb_current_brightness;
 	bo->backlight.set_brightness = backlight_omapfb_set_brightness;
+	bo->backlight.screen_lock = backlight_omapfb_screen_lock;
+	bo->backlight.screen_is_locked = backlight_omapfb_screen_is_locked;
 	bo->backlight.destroy = backlight_omapfb_destroy;
 	bo->backlight.update = backlight_omapfb_update;
 	bo->backlight.poll_interval = 0;

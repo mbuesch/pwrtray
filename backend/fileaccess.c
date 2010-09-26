@@ -114,6 +114,42 @@ struct fileaccess * procfs_file_open(int flags, const char *path_fmt, ...)
 	return file_open(flags, "%s/%s", PROCFS_BASE, path);
 }
 
+int file_read_buf(struct fileaccess *fa, char *buf, size_t size)
+{
+	ssize_t count;
+	size_t pos = 0;
+
+	if (!size)
+		return 0;
+
+	file_rewind(fa);
+	while (size) {
+		count = read(fa->fd, buf + pos, size);
+		if (count < 0)
+			return -errno;
+		if (!count)
+			break;
+		size -= count;
+		pos += count;
+	}
+
+	return pos;
+}
+
+int file_read_string(struct fileaccess *fa, char *buf, size_t size)
+{
+	int count;
+
+	if (!size)
+		return 0;
+	count = file_read_buf(fa, buf, size - 1);
+	if (count < 0)
+		return count;
+	buf[count] = '\0';
+
+	return count;
+}
+
 int file_read_int(struct fileaccess *fa, int *value, int base)
 {
 	char buf[64];

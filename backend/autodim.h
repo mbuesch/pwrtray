@@ -17,6 +17,7 @@ struct autodim {
 	unsigned int nr_fds;
 	struct sleeptimer timer;
 
+	int suspended;
 	unsigned int idle_seconds;
 	unsigned int state;
 	unsigned int bl_percent;
@@ -31,6 +32,9 @@ int autodim_init(struct autodim *ad, struct backlight *bl,
 
 void autodim_destroy(struct autodim *ad);
 void autodim_free(struct autodim *ad);
+
+void autodim_suspend(struct autodim *ad);
+void autodim_resume(struct autodim *ad);
 
 void autodim_handle_input_event(struct autodim *ad);
 

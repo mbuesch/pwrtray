@@ -11,6 +11,8 @@ struct backlight {
 	int (*brightness_step)(struct backlight *b);
 	int (*current_brightness)(struct backlight *b);
 	int (*set_brightness)(struct backlight *b, int value);
+	int (*screen_lock)(struct backlight *b, int lock);
+	int (*screen_is_locked)(struct backlight *b);
 
 	void (*destroy)(struct backlight *b);
 	int (*update)(struct backlight *b);

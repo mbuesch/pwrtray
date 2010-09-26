@@ -236,6 +236,29 @@ void autodim_free(struct autodim *ad)
 		free(ad);
 }
 
+void autodim_suspend(struct autodim *ad)
+{
+	if (!ad)
+		return;
+	if (!ad->suspended) {
+		//TODO stop the timer. Stop events.
+		logdebug("Auto-dimming suspended\n");
+	}
+	ad->suspended++;
+}
+
+void autodim_resume(struct autodim *ad)
+{
+	if (!ad)
+		return;
+	ad->suspended--;
+	if (!ad->suspended) {
+		ad->idle_seconds = 0;
+		autodim_handle_state(ad);
+		logdebug("Auto-dimming resumed\n");
+	}
+}
+
 void autodim_handle_input_event(struct autodim *ad)
 {
 	logverbose("Autodim: Got input event.\n");

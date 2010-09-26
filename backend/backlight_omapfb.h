@@ -10,6 +10,7 @@ struct backlight_omapfb {
 
 	int max_level;
 	int current_level;
+	int locked;
 };
 
 struct backlight * backlight_omapfb_probe(void);

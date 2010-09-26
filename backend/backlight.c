@@ -48,6 +48,16 @@ static int default_set_brightness(struct backlight *b, int value)
 	return -EOPNOTSUPP;
 }
 
+static int default_screen_lock(struct backlight *b, int lock)
+{
+	return -EOPNOTSUPP;
+}
+
+static int default_screen_is_locked(struct backlight *b)
+{
+	return -EOPNOTSUPP;
+}
+
 static void backlight_poll_callback(struct sleeptimer *timer)
 {
 	struct backlight *b = container_of(timer, struct backlight, timer);
@@ -65,6 +75,8 @@ void backlight_init(struct backlight *b)
 	b->brightness_step = default_brightness_step;
 	b->current_brightness = default_current_brightness;
 	b->set_brightness = default_set_brightness;
+	b->screen_lock = default_screen_lock;
+	b->screen_is_locked = default_screen_is_locked;
 }
 
 static void backlight_start(struct backlight *b)

@@ -22,6 +22,7 @@
 #include "list.h"
 #include "battery.h"
 #include "backlight.h"
+#include "screenlock.h"
 #include "autodim.h"
 
 #include <assert.h>
@@ -52,6 +53,7 @@ static struct config_file *config;
 
 static struct battery *battery;
 static struct backlight *backlight;
+static struct screenlock *screenlock;
 static struct autodim *autodim;
 
 
@@ -99,6 +101,16 @@ static void disable_autodim(void)
 	autodim_destroy(autodim);
 	autodim_free(autodim);
 	autodim = NULL;
+}
+
+void autodim_may_suspend(void)
+{
+	autodim_suspend(autodim);
+}
+
+void autodim_may_resume(void)
+{
+	autodim_resume(autodim);
 }
 
 static void received_message(struct client *c, struct pt_message *msg)
@@ -396,6 +408,8 @@ static void shutdown_cleanup(void)
 	autodim_free(autodim);
 	autodim = NULL;
 
+	screenlock_destroy(screenlock);
+	screenlock = NULL;
 	backlight_destroy(backlight);
 	backlight = NULL;
 	battery_destroy(battery);
@@ -428,15 +442,22 @@ static void signal_async_io(int signal)
 	recv_clients();
 }
 
-static void signal_input_event(int signal)
+static void signal_input_event_1(int signal)
 {
 	if (autodim)
 		autodim_handle_input_event(autodim);
 }
 
+static void signal_input_event_2(int signal)
+{
+	if (screenlock)
+		screenlock->event(screenlock);
+}
+
 #define sigset_set_blocked_sigs(setp) do {	\
 		sigemptyset((setp));		\
 		sigaddset((setp), SIGUSR1);	\
+		sigaddset((setp), SIGUSR2);	\
 		sigaddset((setp), SIGIO);	\
 		sigaddset((setp), SIGINT);	\
 		sigaddset((setp), SIGTERM);	\
@@ -486,7 +507,8 @@ static int setup_signal_handlers(void)
 	err |= install_sighandler(SIGTERM, signal_terminate);
 	err |= install_sighandler(SIGPIPE, signal_pipe);
 	err |= install_sighandler(SIGIO, signal_async_io);
-	err |= install_sighandler(SIGUSR1, signal_input_event);
+	err |= install_sighandler(SIGUSR1, signal_input_event_1);
+	err |= install_sighandler(SIGUSR2, signal_input_event_2);
 
 	return err ? -1 : 0;
 }
@@ -510,6 +532,8 @@ int mainloop(void)
 		if (enable_autodim())
 			logerr("Failed to initially enable autodimming\n");
 	}
+	if (backlight->screen_is_locked(backlight) != -EOPNOTSUPP)
+		screenlock = screenlock_probe(backlight);
 	err = create_socket();
 	if (err)
 		goto error;

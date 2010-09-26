@@ -19,6 +19,8 @@ struct fileaccess * file_open(int flags, const char *path_fmt, ...);
 struct fileaccess * sysfs_file_open(int flags, const char *path_fmt, ...);
 struct fileaccess * procfs_file_open(int flags, const char *path_fmt, ...);
 
+int file_read_buf(struct fileaccess *fa, char *buf, size_t size);
+int file_read_string(struct fileaccess *fa, char *buf, size_t size);
 int file_read_int(struct fileaccess *fa, int *value, int base);
 int file_write_int(struct fileaccess *fa, int value, int base);
 int file_read_bool(struct fileaccess *fa, int *value);
