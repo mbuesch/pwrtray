@@ -38,6 +38,8 @@ static int omapfb_write_brightness(struct backlight_omapfb *bo)
 	if (level == 0) {
 		//TODO disable screen
 	}
+
+	return 0;
 }
 
 static int backlight_omapfb_max_brightness(struct backlight *b)
