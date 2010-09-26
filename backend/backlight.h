@@ -21,6 +21,8 @@ struct backlight {
 	/* Internal */
 	struct sleeptimer timer;
 	int autodim_enabled;
+	int framebuffer_fd;
+	int fb_blanked;
 };
 
 void backlight_init(struct backlight *b);
@@ -32,5 +34,7 @@ int backlight_fill_pt_message_stat(struct backlight *b, struct pt_message *msg);
 int backlight_notify_state_change(struct backlight *b);
 
 int backlight_set_percentage(struct backlight *b, unsigned int percent);
+
+int framebuffer_blank(struct backlight *b, int blank);
 
 #endif /* BACKEND_BACKLIGHT_H_ */

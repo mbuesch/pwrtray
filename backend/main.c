@@ -49,7 +49,7 @@ static int socket_fd = -1;
 static int sig_block_count;
 static LIST_HEAD(client_list);
 
-static struct config_file *config;
+struct config_file *config;
 
 static struct battery *battery;
 static struct backlight *backlight;

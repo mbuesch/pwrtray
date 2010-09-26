@@ -21,7 +21,82 @@
 
 #include <errno.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 
+#include <sys/ioctl.h>
+
+#include <linux/fb.h>
+
+
+static int do_framebuffer_blank(int fd, int blank)
+{
+	int ret;
+	unsigned long arg;
+
+	arg = blank ? FB_BLANK_POWERDOWN : FB_BLANK_UNBLANK;
+	ret = ioctl(fd, FBIOBLANK, arg);
+	if (ret)
+		return -ENODEV;
+	logdebug("Framebuffer %s\n", blank ? "blanked" : "unblanked");
+
+	return 0;
+}
+
+int framebuffer_blank(struct backlight *b, int blank)
+{
+	int err;
+
+	if (b->framebuffer_fd < 0)
+		return 0;
+	blank = !!blank;
+	if (blank == b->fb_blanked)
+		return 0;
+	b->fb_blanked = blank;
+
+	err = do_framebuffer_blank(b->framebuffer_fd, blank);
+	if (err) {
+		logerr("Failed to %s the fb device (err %d)\n",
+		       blank ? "blank" : "unblank", err);
+	}
+
+	return err;
+}
+
+static void fbblank_exit(struct backlight *b)
+{
+	if (b->framebuffer_fd >= 0) {
+		do_framebuffer_blank(b->framebuffer_fd, 0);
+		close(b->framebuffer_fd);
+		b->framebuffer_fd = -1;
+	}
+}
+
+static void fbblank_init(struct backlight *b)
+{
+	const char *fbdev;
+	int err, fd;
+
+	fbdev = config_get(config, "SCREEN", "fbdev", NULL);
+	if (!fbdev)
+		return;
+
+	fd = open(fbdev, O_RDWR);
+	if (fd < 0) {
+		logerr("Failed to open framebuffer dev %s: %s\n",
+		       fbdev, strerror(errno));
+		return;
+	}
+	err = do_framebuffer_blank(fd, 0);
+	if (err) {
+		close(fd);
+		return;
+	}
+	b->fb_blanked = 0;
+	b->framebuffer_fd = fd;
+
+	logdebug("Opened %s for fb blanking\n", fbdev);
+}
 
 static int default_min_brightness(struct backlight *b)
 {
@@ -104,14 +179,18 @@ struct backlight * backlight_probe(void)
 	return NULL;
 
 ok:
+	fbblank_init(b);
 	backlight_start(b);
+
 	return b;
 }
 
 void backlight_destroy(struct backlight *b)
 {
-	if (b)
+	if (b) {
+		fbblank_exit(b);
 		b->destroy(b);
+	}
 }
 
 int backlight_fill_pt_message_stat(struct backlight *b, struct pt_message *msg)

@@ -52,6 +52,17 @@ static void autodim_handle_state(struct autodim *ad)
 	}
 }
 
+static void autodim_timer_stop(struct autodim *ad)
+{
+	sleeptimer_dequeue(&ad->timer);
+}
+
+static void autodim_timer_start(struct autodim *ad)
+{
+	sleeptimer_set_timeout_relative(&ad->timer, AUTODIM_TIMER_INTERVAL);
+	sleeptimer_enqueue(&ad->timer);
+}
+
 static void autodim_timer_callback(struct sleeptimer *timer)
 {
 	struct autodim *ad = container_of(timer, struct autodim, timer);
@@ -60,9 +71,7 @@ static void autodim_timer_callback(struct sleeptimer *timer)
 		ad->idle_seconds++;
 		autodim_handle_state(ad);
 	}
-
-	sleeptimer_set_timeout_relative(timer, AUTODIM_TIMER_INTERVAL);
-	sleeptimer_enqueue(timer);
+	autodim_timer_start(ad);
 }
 
 struct autodim * autodim_alloc(void)
@@ -191,8 +200,7 @@ int autodim_init(struct autodim *ad, struct backlight *bl,
 		goto err_free_fds;
 
 	sleeptimer_init(&ad->timer, autodim_timer_callback);
-	sleeptimer_set_timeout_relative(&ad->timer, AUTODIM_TIMER_INTERVAL);
-	sleeptimer_enqueue(&ad->timer);
+	autodim_timer_start(ad);
 
 	logdebug("Auto-dimming enabled\n");
 
@@ -219,7 +227,7 @@ void autodim_destroy(struct autodim *ad)
 
 	ad->bl->autodim_enabled--;
 
-	sleeptimer_dequeue(&ad->timer);
+	autodim_timer_stop(ad);
 	for (i = 0; i < ad->nr_fds; i++)
 		close(ad->fds[i]);
 	free(ad->fds);
@@ -241,7 +249,8 @@ void autodim_suspend(struct autodim *ad)
 	if (!ad)
 		return;
 	if (!ad->suspended) {
-		//TODO stop the timer. Stop events.
+		autodim_timer_stop(ad);
+		//TODO disable input events.
 		logdebug("Auto-dimming suspended\n");
 	}
 	ad->suspended++;
@@ -253,8 +262,8 @@ void autodim_resume(struct autodim *ad)
 		return;
 	ad->suspended--;
 	if (!ad->suspended) {
-		ad->idle_seconds = 0;
-		autodim_handle_state(ad);
+		autodim_handle_input_event(ad);
+		autodim_timer_start(ad);
 		logdebug("Auto-dimming resumed\n");
 	}
 }

@@ -2,7 +2,9 @@
 #define BACKEND_MAIN_H_
 
 #include "api.h"
+#include "conf.h"
 
+extern struct config_file *config;
 
 void block_signals(void);
 void unblock_signals(void);

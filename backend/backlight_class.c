@@ -50,6 +50,7 @@ static int backlight_class_set_brightness(struct backlight *b, int value)
 	if (err)
 		return err;
 	bc->brightness = value;
+	framebuffer_blank(b, (value == 0));
 
 	return b->update(b);
 }

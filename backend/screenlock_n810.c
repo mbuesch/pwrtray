@@ -14,6 +14,8 @@
 
 #include "screenlock_n810.h"
 #include "util.h"
+#include "log.h"
+#include "main.h"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -58,7 +60,7 @@ static void screenlock_n810_event(struct screenlock *s)
 {
 	struct screenlock_n810 *sn = container_of(s, struct screenlock_n810, screenlock);
 	char buf[32], *bufp;
-	int count, switch_state, locked;
+	int count, switch_state;
 
 	count = file_read_string(sn->kb_lock_state_file, buf, sizeof(buf));
 	if (count <= 0)
