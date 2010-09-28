@@ -1,4 +1,10 @@
-all: backend tray xlock
+# Enable xlock build?
+FEATURE_XLOCK	?= y
+
+
+ALL_TARGETS	:= backend tray $(if $(filter 1 y,$(FEATURE_XLOCK)),xlock)
+
+all: $(ALL_TARGETS)
 
 backend:
 	$(MAKE) -C backend all
@@ -10,13 +16,9 @@ xlock:
 	$(MAKE) -C xlock all
 
 clean:
-	$(MAKE) -C backend clean
-	$(MAKE) -C tray clean
-	$(MAKE) -C xlock clean
+	$(foreach TARGET,$(ALL_TARGETS),$(MAKE) -C $(TARGET) clean && ) true
 
-install: backend tray xlock
-	$(MAKE) -C backend install
-	$(MAKE) -C tray install
-	$(MAKE) -C xlock install
+install: $(ALL_TARGETS)
+	$(foreach TARGET,$(ALL_TARGETS),$(MAKE) -C $(TARGET) install && ) true
 
 .PHONY: all backend tray xlock clean install
