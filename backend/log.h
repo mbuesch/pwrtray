@@ -17,10 +17,14 @@ enum {
 
 void loginfo(const char *fmt, ...);
 void logerr(const char *fmt, ...);
-void logdebug(const char *fmt, ...);
+void _logdebug(const char *fmt, ...);
+#define logdebug(...) do {			\
+		if (loglevel_is_debug())	\
+			_logdebug(__VA_ARGS__);	\
+	} while (0)
 #define logverbose(...) do {			\
 		if (loglevel_is_verbose())	\
-			logdebug(__VA_ARGS__);	\
+			_logdebug(__VA_ARGS__);	\
 	} while (0)
 
 void log_initialize(void);

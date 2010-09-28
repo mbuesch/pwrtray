@@ -75,7 +75,7 @@ void logerr(const char *fmt, ...)
 	}
 }
 
-void logdebug(const char *fmt, ...)
+void _logdebug(const char *fmt, ...)
 {
 	va_list args;
 
