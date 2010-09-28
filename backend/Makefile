@@ -9,6 +9,7 @@ DESTDIR		?=
 PREFIX		?= /usr
 
 CFLAGS		+= -DPREFIX=$(PREFIX) -D_GNU_SOURCE
+CFLAGS          += $(if $(filter 1 y,$(FEATURE_XLOCK)),-DFEATURE_XLOCK=1)
 
 BIN		= pwrtray-backend
 BATT_SRCS	= battery.c battery_powerbook.c battery_n810.c

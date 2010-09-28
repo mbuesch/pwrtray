@@ -1,5 +1,5 @@
 # Enable xlock build?
-FEATURE_XLOCK	?= y
+export FEATURE_XLOCK	?= y
 
 
 ALL_TARGETS	:= backend tray $(if $(filter 1 y,$(FEATURE_XLOCK)),xlock)

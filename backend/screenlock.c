@@ -34,6 +34,12 @@ int block_x11_input(struct screenlock *s)
 {
 	pid_t pid;
 
+#ifndef FEATURE_XLOCK
+# warning "X11 input blocking feature disabled"
+	logdebug("X11 input blocking feature disabled\n");
+	return 0;
+#endif
+
 	pid = fork();
 	if (pid < 0) {
 		logerr("block_x11_input: Failed to fork (%s)\n",
@@ -58,6 +64,10 @@ void unblock_x11_input(struct screenlock *s)
 {
 	int err, status;
 	pid_t res;
+
+#ifndef FEATURE_XLOCK
+	return;
+#endif
 
 	if (s->x11lock_helper == 0)
 		return;
