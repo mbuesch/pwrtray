@@ -5,6 +5,9 @@
 #include <string.h>
 
 
+#define __stringify(x)		#x
+#define stringify(x)		__stringify(x)
+
 #define min(a, b)		((a) < (b) ? (a) : (b))
 #define max(a, b)		((a) > (b) ? (a) : (b))
 #define clamp(v, mi, ma)	max(min(v, ma), mi)

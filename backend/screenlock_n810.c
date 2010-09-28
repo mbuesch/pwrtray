@@ -36,8 +36,10 @@ static void screenlock_n810_toggle(struct screenlock *s)
 	lock = !(s->backlight->screen_is_locked(s->backlight));
 	logdebug("screenlock: %s the device\n", lock ? "Locking" : "Unlocking");
 
-	if (lock)
+	if (lock) {
+		block_x11_input(s);
 		autodim_may_suspend();
+	}
 
 	/* Set backlight lock state */
 	err = s->backlight->screen_lock(s->backlight, lock);
@@ -52,8 +54,10 @@ static void screenlock_n810_toggle(struct screenlock *s)
 	if (err)
 		logerr("Failed to write keyboard disable file\n");
 
-	if (!lock)
+	if (!lock) {
 		autodim_may_resume();
+		unblock_x11_input(s);
+	}
 }
 
 static void screenlock_n810_event(struct screenlock *s)
