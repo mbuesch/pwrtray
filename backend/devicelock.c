@@ -12,16 +12,16 @@
  *   GNU General Public License for more details.
  */
 
-#include "screenlock.h"
+#include "devicelock.h"
 
-#include "screenlock_n810.h"
+#include "devicelock_n810.h"
 
 
-struct screenlock * screenlock_probe(void)
+struct devicelock * devicelock_probe(void)
 {
-	struct screenlock *s;
+	struct devicelock *s;
 
-	s = screenlock_n810_probe();
+	s = devicelock_n810_probe();
 	if (s)
 		goto ok;
 
@@ -31,7 +31,7 @@ ok:
 	return s;
 }
 
-void screenlock_destroy(struct screenlock *s)
+void devicelock_destroy(struct devicelock *s)
 {
 	if (s)
 		s->destroy(s);

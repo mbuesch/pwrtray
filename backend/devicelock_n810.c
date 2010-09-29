@@ -12,7 +12,7 @@
  *   GNU General Public License for more details.
  */
 
-#include "screenlock_n810.h"
+#include "devicelock_n810.h"
 #include "util.h"
 #include "log.h"
 #include "main.h"
@@ -28,13 +28,13 @@
 #define GPIOSW_BASEPATH	"/devices/platform/gpio-switch"
 
 
-static void screenlock_n810_toggle(struct screenlock *s)
+static void devicelock_n810_toggle(struct devicelock *s)
 {
-	struct screenlock_n810 *sn = container_of(s, struct screenlock_n810, screenlock);
+	struct devicelock_n810 *sn = container_of(s, struct devicelock_n810, devicelock);
 	int err, lock;
 
 	lock = !(backend.backlight->screen_is_locked(backend.backlight));
-	logdebug("screenlock: %s the device\n", lock ? "Locking" : "Unlocking");
+	logdebug("devicelock: %s the device\n", lock ? "Locking" : "Unlocking");
 
 	if (lock)
 		autodim_suspend(backend.autodim);
@@ -56,9 +56,9 @@ static void screenlock_n810_toggle(struct screenlock *s)
 		autodim_resume(backend.autodim);
 }
 
-static void screenlock_n810_event(struct screenlock *s)
+static void devicelock_n810_event(struct devicelock *s)
 {
-	struct screenlock_n810 *sn = container_of(s, struct screenlock_n810, screenlock);
+	struct devicelock_n810 *sn = container_of(s, struct devicelock_n810, devicelock);
 	char buf[32], *bufp;
 	int count, switch_state;
 
@@ -71,19 +71,19 @@ static void screenlock_n810_event(struct screenlock *s)
 	} else if (strcmp(bufp, "closed") == 0) {
 		switch_state = 1;
 	} else {
-		logerr("screenlock: Invalid state\n");
+		logerr("devicelock: Invalid state\n");
 		return;
 	}
 	if (switch_state == sn->switch_state)
 		return;
 	sn->switch_state = switch_state;
 	if (switch_state)
-		screenlock_n810_toggle(s);
+		devicelock_n810_toggle(s);
 }
 
-static void screenlock_n810_destroy(struct screenlock *s)
+static void devicelock_n810_destroy(struct devicelock *s)
 {
-	struct screenlock_n810 *sn = container_of(s, struct screenlock_n810, screenlock);
+	struct devicelock_n810 *sn = container_of(s, struct devicelock_n810, devicelock);
 
 	close(sn->kb_lock_evdev_fd);
 	file_close(sn->kb_lock_state_file);
@@ -92,9 +92,9 @@ static void screenlock_n810_destroy(struct screenlock *s)
 	free(sn);
 }
 
-struct screenlock * screenlock_n810_probe(void)
+struct devicelock * devicelock_n810_probe(void)
 {
-	struct screenlock_n810 *sn;
+	struct devicelock_n810 *sn;
 	struct fileaccess *ts_disable = NULL;
 	struct fileaccess *kb_disable = NULL;
 	struct fileaccess *kb_lock_state = NULL;
@@ -156,12 +156,12 @@ struct screenlock * screenlock_n810_probe(void)
 	sn->ts_disable_file = ts_disable;
 	sn->kb_disable_file = kb_disable;
 
-	sn->screenlock.event = screenlock_n810_event;
-	sn->screenlock.destroy = screenlock_n810_destroy;
+	sn->devicelock.event = devicelock_n810_event;
+	sn->devicelock.destroy = devicelock_n810_destroy;
 
 	logdebug("Screenlock toggle on %s\n", buf);
 
-	return &sn->screenlock;
+	return &sn->devicelock;
 
 err_close:
 	if (kb_lock_evdev_fd)

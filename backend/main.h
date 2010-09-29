@@ -3,14 +3,18 @@
 
 #include "api.h"
 #include "conf.h"
+#include "battery.h"
+#include "backlight.h"
+#include "devicelock.h"
 #include "x11lock.h"
+#include "autodim.h"
 
 
 struct backend {
 	struct config_file *config;
 	struct battery *battery;
 	struct backlight *backlight;
-	struct screenlock *screenlock;
+	struct devicelock *devicelock;
 	struct x11lock x11lock;
 	struct autodim *autodim;
 };

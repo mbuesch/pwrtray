@@ -22,7 +22,7 @@
 #include "list.h"
 #include "battery.h"
 #include "backlight.h"
-#include "screenlock.h"
+#include "devicelock.h"
 #include "autodim.h"
 
 #include <assert.h>
@@ -397,8 +397,8 @@ static void shutdown_cleanup(void)
 	autodim_free(backend.autodim);
 	backend.autodim = NULL;
 
-	screenlock_destroy(backend.screenlock);
-	backend.screenlock = NULL;
+	devicelock_destroy(backend.devicelock);
+	backend.devicelock = NULL;
 	backlight_destroy(backend.backlight);
 	backend.backlight = NULL;
 	battery_destroy(backend.battery);
@@ -439,8 +439,8 @@ static void signal_input_event_1(int signal)
 
 static void signal_input_event_2(int signal)
 {
-	if (backend.screenlock)
-		backend.screenlock->event(backend.screenlock);
+	if (backend.devicelock)
+		backend.devicelock->event(backend.devicelock);
 }
 
 #define sigset_set_blocked_sigs(setp) do {	\
@@ -522,7 +522,7 @@ int mainloop(void)
 			logerr("Failed to initially enable autodimming\n");
 	}
 	if (backend.backlight->screen_is_locked(backend.backlight) != -EOPNOTSUPP)
-		backend.screenlock = screenlock_probe(backend.backlight);
+		backend.devicelock = devicelock_probe();
 	err = create_socket();
 	if (err)
 		goto error;
