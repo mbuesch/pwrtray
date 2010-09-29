@@ -35,7 +35,6 @@ static int omapfb_write_brightness(struct backlight_omapfb *bo)
 	err = file_write_int(bo->level_file, level, 10);
 	if (err)
 		return err;
-	framebuffer_blank(&bo->backlight, (level == 0));
 
 	return 0;
 }

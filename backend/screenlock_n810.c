@@ -33,16 +33,14 @@ static void screenlock_n810_toggle(struct screenlock *s)
 	struct screenlock_n810 *sn = container_of(s, struct screenlock_n810, screenlock);
 	int err, lock;
 
-	lock = !(s->backlight->screen_is_locked(s->backlight));
+	lock = !(backend.backlight->screen_is_locked(backend.backlight));
 	logdebug("screenlock: %s the device\n", lock ? "Locking" : "Unlocking");
 
-	if (lock) {
-		block_x11_input(s);
+	if (lock)
 		autodim_suspend(backend.autodim);
-	}
 
 	/* Set backlight lock state */
-	err = s->backlight->screen_lock(s->backlight, lock);
+	err = backend.backlight->screen_lock(backend.backlight, lock);
 	if (err)
 		logerr("Failed to set backlight lock state\n");
 	/* Set touchscreen lock state */
@@ -54,10 +52,8 @@ static void screenlock_n810_toggle(struct screenlock *s)
 	if (err)
 		logerr("Failed to write keyboard disable file\n");
 
-	if (!lock) {
+	if (!lock)
 		autodim_resume(backend.autodim);
-		unblock_x11_input(s);
-	}
 }
 
 static void screenlock_n810_event(struct screenlock *s)
@@ -96,7 +92,7 @@ static void screenlock_n810_destroy(struct screenlock *s)
 	free(sn);
 }
 
-struct screenlock * screenlock_n810_probe(struct backlight *bl)
+struct screenlock * screenlock_n810_probe(void)
 {
 	struct screenlock_n810 *sn;
 	struct fileaccess *ts_disable = NULL;

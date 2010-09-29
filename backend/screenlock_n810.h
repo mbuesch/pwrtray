@@ -15,6 +15,6 @@ struct screenlock_n810 {
 	struct fileaccess *ts_disable_file;
 };
 
-struct screenlock * screenlock_n810_probe(struct backlight *bl);
+struct screenlock * screenlock_n810_probe(void);
 
 #endif /* BACKEND_SCREENLOCK_N810_H_ */

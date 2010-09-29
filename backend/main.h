@@ -3,6 +3,7 @@
 
 #include "api.h"
 #include "conf.h"
+#include "x11lock.h"
 
 
 struct backend {
@@ -10,6 +11,7 @@ struct backend {
 	struct battery *battery;
 	struct backlight *backlight;
 	struct screenlock *screenlock;
+	struct x11lock x11lock;
 	struct autodim *autodim;
 };
 

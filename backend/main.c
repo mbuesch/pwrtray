@@ -391,6 +391,8 @@ static void shutdown_cleanup(void)
 
 	force_disconnect_clients();
 
+	unblock_x11_input(&backend.x11lock);
+
 	autodim_destroy(backend.autodim);
 	autodim_free(backend.autodim);
 	backend.autodim = NULL;

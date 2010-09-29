@@ -15,6 +15,7 @@
 #include "backlight.h"
 #include "log.h"
 #include "main.h"
+#include "x11lock.h"
 
 #include "backlight_class.h"
 #include "backlight_omapfb.h"
@@ -43,7 +44,7 @@ static int do_framebuffer_blank(int fd, int blank)
 	return 0;
 }
 
-int framebuffer_blank(struct backlight *b, int blank)
+static int framebuffer_blank(struct backlight *b, int blank)
 {
 	int err;
 
@@ -76,6 +77,8 @@ static void fbblank_init(struct backlight *b)
 {
 	const char *fbdev;
 	int err, fd;
+
+	b->framebuffer_fd = -1;
 
 	fbdev = config_get(backend.config, "SCREEN", "fbdev", NULL);
 	if (!fbdev)
@@ -219,6 +222,24 @@ int backlight_notify_state_change(struct backlight *b)
 	return 0;
 }
 
+int backlight_set_brightness(struct backlight *b, int value)
+{
+	int err;
+
+	err = b->set_brightness(b, value);
+	if (err)
+		return err;
+	if (value) {
+		unblock_x11_input(&backend.x11lock);
+		framebuffer_blank(b, 0);
+	} else {
+		framebuffer_blank(b, 1);
+		block_x11_input(&backend.x11lock);
+	}
+
+	return 0;
+}
+
 int backlight_set_percentage(struct backlight *b, unsigned int percent)
 {
 	int bmin = b->min_brightness(b);
@@ -228,7 +249,7 @@ int backlight_set_percentage(struct backlight *b, unsigned int percent)
 	range = bmax - bmin;
 	value = (range * percent / 100) + bmin;
 
-	err = b->set_brightness(b, value);
+	err = backlight_set_brightness(b, value);
 	if (!err)
 		backlight_notify_state_change(b);
 

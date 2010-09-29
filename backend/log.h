@@ -27,6 +27,14 @@ void _logdebug(const char *fmt, ...);
 			_logdebug(__VA_ARGS__);	\
 	} while (0)
 
+#define warn_on(cond) do {					\
+		int _warn_on_condition = !!(cond);		\
+		if (_warn_on_condition)				\
+			logerr("Warning: " __FILE__ ":"		\
+				stringify(__LINE__) " ("	\
+				stringify(cond) ") failed\n");	\
+	} while (0)
+
 void log_initialize(void);
 void log_exit(void);
 
