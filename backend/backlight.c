@@ -77,7 +77,7 @@ static void fbblank_init(struct backlight *b)
 	const char *fbdev;
 	int err, fd;
 
-	fbdev = config_get(config, "SCREEN", "fbdev", NULL);
+	fbdev = config_get(backend.config, "SCREEN", "fbdev", NULL);
 	if (!fbdev)
 		return;
 

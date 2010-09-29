@@ -4,14 +4,20 @@
 #include "api.h"
 #include "conf.h"
 
-extern struct config_file *config;
+
+struct backend {
+	struct config_file *config;
+	struct battery *battery;
+	struct backlight *backlight;
+	struct screenlock *screenlock;
+	struct autodim *autodim;
+};
+
+extern struct backend backend;
 
 void block_signals(void);
 void unblock_signals(void);
 
 void notify_clients(struct pt_message *msg, uint16_t flags);
-
-void autodim_may_suspend(void);
-void autodim_may_resume(void);
 
 #endif /* BACKEND_MAIN_H_ */

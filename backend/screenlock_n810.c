@@ -38,7 +38,7 @@ static void screenlock_n810_toggle(struct screenlock *s)
 
 	if (lock) {
 		block_x11_input(s);
-		autodim_may_suspend();
+		autodim_suspend(backend.autodim);
 	}
 
 	/* Set backlight lock state */
@@ -55,7 +55,7 @@ static void screenlock_n810_toggle(struct screenlock *s)
 		logerr("Failed to write keyboard disable file\n");
 
 	if (!lock) {
-		autodim_may_resume();
+		autodim_resume(backend.autodim);
 		unblock_x11_input(s);
 	}
 }

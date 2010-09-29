@@ -49,12 +49,7 @@ static int socket_fd = -1;
 static int sig_block_count;
 static LIST_HEAD(client_list);
 
-struct config_file *config;
-
-static struct battery *battery;
-static struct backlight *backlight;
-static struct screenlock *screenlock;
-static struct autodim *autodim;
+struct backend backend;
 
 
 static int send_message(struct client *c, struct pt_message *msg, uint16_t flags)
@@ -82,15 +77,15 @@ static int enable_autodim(void)
 {
 	int err = -ENOMEM;
 
-	if (autodim)
+	if (backend.autodim)
 		return 0;
 
-	autodim = autodim_alloc();
-	if (autodim)
-		err = autodim_init(autodim, backlight, config);
+	backend.autodim = autodim_alloc();
+	if (backend.autodim)
+		err = autodim_init(backend.autodim, backend.backlight, backend.config);
 	if (err) {
-		autodim_free(autodim);
-		autodim = NULL;
+		autodim_free(backend.autodim);
+		backend.autodim = NULL;
 	}
 
 	return err;
@@ -98,19 +93,9 @@ static int enable_autodim(void)
 
 static void disable_autodim(void)
 {
-	autodim_destroy(autodim);
-	autodim_free(autodim);
-	autodim = NULL;
-}
-
-void autodim_may_suspend(void)
-{
-	autodim_suspend(autodim);
-}
-
-void autodim_may_resume(void)
-{
-	autodim_resume(autodim);
+	autodim_destroy(backend.autodim);
+	autodim_free(backend.autodim);
+	backend.autodim = NULL;
 }
 
 static void received_message(struct client *c, struct pt_message *msg)
@@ -133,11 +118,13 @@ static void received_message(struct client *c, struct pt_message *msg)
 		send_message(c, &reply, PT_FLG_OK);
 		break;
 	case PTREQ_BL_GETSTATE:
-		err = backlight_fill_pt_message_stat(backlight, &reply);
+		err = backlight_fill_pt_message_stat(backend.backlight,
+						     &reply);
 		send_message(c, &reply, err ? 0 : PT_FLG_OK);
 		break;
 	case PTREQ_BL_SETBRIGHTNESS:
-		err = backlight->set_brightness(backlight, msg->bl_set.brightness);
+		err = backend.backlight->set_brightness(backend.backlight,
+							msg->bl_set.brightness);
 		reply.error.code = htonl(err);
 		send_message(c, &reply, err ? 0 : PT_FLG_OK);
 		break;
@@ -151,7 +138,7 @@ static void received_message(struct client *c, struct pt_message *msg)
 		send_message(c, &reply, err ? 0 : PT_FLG_OK);
 		break;
 	case PTREQ_BAT_GETSTATE:
-		err = battery_fill_pt_message_stat(battery, &reply);
+		err = battery_fill_pt_message_stat(backend.battery, &reply);
 		send_message(c, &reply, err ? 0 : PT_FLG_OK);
 		break;
 	default:
@@ -404,22 +391,22 @@ static void shutdown_cleanup(void)
 
 	force_disconnect_clients();
 
-	autodim_destroy(autodim);
-	autodim_free(autodim);
-	autodim = NULL;
+	autodim_destroy(backend.autodim);
+	autodim_free(backend.autodim);
+	backend.autodim = NULL;
 
-	screenlock_destroy(screenlock);
-	screenlock = NULL;
-	backlight_destroy(backlight);
-	backlight = NULL;
-	battery_destroy(battery);
-	battery = NULL;
+	screenlock_destroy(backend.screenlock);
+	backend.screenlock = NULL;
+	backlight_destroy(backend.backlight);
+	backend.backlight = NULL;
+	battery_destroy(backend.battery);
+	backend.battery = NULL;
 
 	remove_pidfile();
 	remove_socket();
 
-	config_file_free(config);
-	config = NULL;
+	config_file_free(backend.config);
+	backend.config = NULL;
 
 	unblock_signals();
 }
@@ -444,14 +431,14 @@ static void signal_async_io(int signal)
 
 static void signal_input_event_1(int signal)
 {
-	if (autodim)
-		autodim_handle_input_event(autodim);
+	if (backend.autodim)
+		autodim_handle_input_event(backend.autodim);
 }
 
 static void signal_input_event_2(int signal)
 {
-	if (screenlock)
-		screenlock->event(screenlock);
+	if (backend.screenlock)
+		backend.screenlock->event(backend.screenlock);
 }
 
 #define sigset_set_blocked_sigs(setp) do {	\
@@ -519,21 +506,21 @@ int mainloop(void)
 
 	log_initialize();
 
-	config = config_file_parse("/etc/pwrtray-backendrc");
-	if (!config)
+	backend.config = config_file_parse("/etc/pwrtray-backendrc");
+	if (!backend.config)
 		goto error;
-	battery = battery_probe();
-	if (!battery)
+	backend.battery = battery_probe();
+	if (!backend.battery)
 		goto error;
-	backlight = backlight_probe();
-	if (!backlight)
+	backend.backlight = backlight_probe();
+	if (!backend.backlight)
 		goto error;
-	if (config_get_bool(config, "BACKLIGHT", "autodim_default_on", 0)) {
+	if (config_get_bool(backend.config, "BACKLIGHT", "autodim_default_on", 0)) {
 		if (enable_autodim())
 			logerr("Failed to initially enable autodimming\n");
 	}
-	if (backlight->screen_is_locked(backlight) != -EOPNOTSUPP)
-		screenlock = screenlock_probe(backlight);
+	if (backend.backlight->screen_is_locked(backend.backlight) != -EOPNOTSUPP)
+		backend.screenlock = screenlock_probe(backend.backlight);
 	err = create_socket();
 	if (err)
 		goto error;
