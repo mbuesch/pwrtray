@@ -230,11 +230,11 @@ int backlight_set_brightness(struct backlight *b, int value)
 	if (err)
 		return err;
 	if (value) {
-		unblock_x11_input(&backend.x11lock);
 		framebuffer_blank(b, 0);
+		unblock_x11_input(&backend.x11lock);
 	} else {
-		framebuffer_blank(b, 1);
 		block_x11_input(&backend.x11lock);
+		framebuffer_blank(b, 1);
 	}
 
 	return 0;

@@ -50,8 +50,12 @@ int main(int argc, char **argv)
 
 	display = XOpenDisplay(NULL);
 	if (!display) {
-		fprintf(stderr, "Failed to open DISPLAY\n");
-		return 1;
+		/* Fallback to the first display. */
+		display = XOpenDisplay(":0");
+		if (!display) {
+			fprintf(stderr, "Failed to open DISPLAY\n");
+			return 1;
+		}
 	}
 	window = DefaultRootWindow(display);
 
