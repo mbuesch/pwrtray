@@ -481,7 +481,7 @@ static int install_sighandler(int signal, void (*handler)(int))
 	struct sigaction act;
 
 	memset(&act, 0, sizeof(act));
-	sigemptyset(&act.sa_mask);
+	sigset_set_blocked_sigs(&act.sa_mask);
 	act.sa_flags = 0;
 	act.sa_handler = handler;
 
