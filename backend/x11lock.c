@@ -79,8 +79,7 @@ void unblock_x11_input(struct x11lock *xl)
 		return;
 	xl->helper_pid = 0;
 
-//	err = kill(pid, SIGTERM);
-	err = kill(pid, SIGKILL);//FIXME
+	err = kill(pid, SIGTERM);
 	if (err) {
 		logerr("unlock_x11_input: Failed to kill helper process PID %d\n",
 		       (int)pid);

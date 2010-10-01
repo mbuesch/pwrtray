@@ -28,7 +28,7 @@ static void signal_handler(int signal)
 	XUngrabKeyboard(display, CurrentTime);
 	XUngrabPointer(display, CurrentTime);
 	printf("pwrtray-xlock: released\n");
-	exit(0);
+	_Exit(0);
 }
 
 static int install_sighandler(int signal, void (*handler)(int))
@@ -47,6 +47,7 @@ int main(int argc, char **argv)
 {
 	Window window;
 	int res;
+	sigset_t sigset;
 
 	display = XOpenDisplay(NULL);
 	if (!display) {
@@ -59,7 +60,9 @@ int main(int argc, char **argv)
 	}
 	window = DefaultRootWindow(display);
 
-	res = install_sighandler(SIGINT, signal_handler);
+	sigemptyset(&sigset);
+	res = sigprocmask(SIG_SETMASK, &sigset, NULL);
+	res |= install_sighandler(SIGINT, signal_handler);
 	res |= install_sighandler(SIGTERM, signal_handler);
 	if (res) {
 		fprintf(stderr, "Failed to setup signal handlers\n");
@@ -84,5 +87,5 @@ int main(int argc, char **argv)
 
 	printf("pwrtray-xlock: locked\n");
 	while (1)
-		sleep(~0u);
+		sleep(0xFFFF);
 }
