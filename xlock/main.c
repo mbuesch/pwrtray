@@ -29,7 +29,7 @@ static void signal_handler(int signal)
 	XUngrabPointer(display, CurrentTime);
 	XSync(display, True);
 	printf("pwrtray-xlock: released\n");
-	_Exit(0);
+	exit(0);
 }
 
 static int install_sighandler(int signal, void (*handler)(int))
