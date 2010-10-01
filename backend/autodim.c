@@ -42,12 +42,12 @@ static void autodim_handle_state(struct autodim *ad)
 {
 	struct autodim_step *step;
 
-	assert(ad->state < ARRAY_SIZE(ad->steps));
+	assert(ad->state < ad->nr_steps);
 	step = &ad->steps[ad->state];
 
 	if (ad->idle_seconds >= step->second) {
 		autodim_set_backlight(ad, step->percent);
-		if (ad->state < ARRAY_SIZE(ad->steps) - 1)
+		if (ad->state + 1 < ad->nr_steps)
 			ad->state++;
 	}
 }
