@@ -62,12 +62,11 @@ static int backlight_omapfb_set_brightness(struct backlight *b, int value)
 	value = max(b->min_brightness(b), value);
 	if (value == bo->current_level)
 		return 0;
-	err = omapfb_write_brightness(bo);
-	if (err)
-		return err;
 	bo->current_level = value;
+	err = omapfb_write_brightness(bo);
+	backlight_notify_state_change(b);
 
-	return 0;
+	return err;
 }
 
 static int backlight_omapfb_screen_lock(struct backlight *b, int lock)
