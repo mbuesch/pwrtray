@@ -27,6 +27,7 @@ static void signal_handler(int signal)
 {
 	XUngrabKeyboard(display, CurrentTime);
 	XUngrabPointer(display, CurrentTime);
+	XSync(display, True);
 	printf("pwrtray-xlock: released\n");
 	_Exit(0);
 }
@@ -84,6 +85,7 @@ int main(int argc, char **argv)
 		XUngrabPointer(display, CurrentTime);
 		return 1;
 	}
+	XFlush(display);
 
 	printf("pwrtray-xlock: locked\n");
 	while (1)
