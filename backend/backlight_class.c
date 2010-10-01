@@ -46,31 +46,27 @@ static int backlight_class_set_brightness(struct backlight *b, int value)
 
 	value = min(b->max_brightness(b), value);
 	value = max(b->min_brightness(b), value);
+	if (bc->brightness == value)
+		return 0;
 	err = file_write_int(bc->set_br_file, value, 10);
 	if (err)
 		return err;
 	bc->brightness = value;
+	backlight_notify_state_change(b);
 
-	return b->update(b);
+	return 0;
 }
 
-static int backlight_class_update(struct backlight *b)
+static int backlight_class_read_file(struct backlight_class *bc)
 {
-	struct backlight_class *bc = container_of(b, struct backlight_class, backlight);
 	int err, value;
-	int value_changed = 0;
 
 	err = file_read_int(bc->actual_br_file, &value, 0);
 	if (err) {
 		logerr("WARNING: Failed to read actual backlight brightness\n");
 		return err;
 	}
-	if (value != bc->brightness)
-		value_changed = 1;
 	bc->brightness = value;
-
-	if (value_changed)
-		backlight_notify_state_change(b);
 
 	return 0;
 }
@@ -126,12 +122,11 @@ struct backlight * backlight_class_probe(void)
 	bc->backlight.current_brightness = backlight_class_current_brightness;
 	bc->backlight.set_brightness = backlight_class_set_brightness;
 	bc->backlight.destroy = backlight_class_destroy;
-	bc->backlight.update = backlight_class_update;
-	bc->backlight.poll_interval = 0;
 
-	err = bc->backlight.update(&bc->backlight);
+	err = backlight_class_read_file(bc);
 	if (err)
 		goto err_free;
+	backlight_notify_state_change(&bc->backlight);
 
 	dir_entries_free(&dir_entries);
 

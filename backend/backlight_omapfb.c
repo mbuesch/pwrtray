@@ -60,12 +60,14 @@ static int backlight_omapfb_set_brightness(struct backlight *b, int value)
 
 	value = min(b->max_brightness(b), value);
 	value = max(b->min_brightness(b), value);
-	bo->current_level = value;
+	if (value == bo->current_level)
+		return 0;
 	err = omapfb_write_brightness(bo);
 	if (err)
 		return err;
+	bo->current_level = value;
 
-	return b->update(b);
+	return 0;
 }
 
 static int backlight_omapfb_screen_lock(struct backlight *b, int lock)
@@ -92,23 +94,16 @@ static int backlight_omapfb_screen_is_locked(struct backlight *b)
 	return bo->locked;
 }
 
-static int backlight_omapfb_update(struct backlight *b)
+static int backlight_omapfb_read_file(struct backlight_omapfb *bo)
 {
-	struct backlight_omapfb *bo = container_of(b, struct backlight_omapfb, backlight);
 	int err, value;
-	int value_changed = 0;
 
 	err = file_read_int(bo->level_file, &value, 0);
 	if (err) {
 		logerr("WARNING: Failed to read backlight level file\n");
 		return err;
 	}
-	if (value != bo->current_level)
-		value_changed = 1;
 	bo->current_level = value;
-
-	if (value_changed)
-		backlight_notify_state_change(b);
 
 	return 0;
 }
@@ -153,12 +148,11 @@ struct backlight * backlight_omapfb_probe(void)
 	bo->backlight.screen_lock = backlight_omapfb_screen_lock;
 	bo->backlight.screen_is_locked = backlight_omapfb_screen_is_locked;
 	bo->backlight.destroy = backlight_omapfb_destroy;
-	bo->backlight.update = backlight_omapfb_update;
-	bo->backlight.poll_interval = 0;
 
-	err = bo->backlight.update(&bo->backlight);
+	err = backlight_omapfb_read_file(bo);
 	if (err)
 		goto err_free;
+	backlight_notify_state_change(&bo->backlight);
 
 	return &bo->backlight;
 

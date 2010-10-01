@@ -1,7 +1,6 @@
 #ifndef BACKEND_BACKLIGHT_H_
 #define BACKEND_BACKLIGHT_H_
 
-#include "timer.h"
 #include "api.h"
 
 
@@ -15,11 +14,8 @@ struct backlight {
 	int (*screen_is_locked)(struct backlight *b);
 
 	void (*destroy)(struct backlight *b);
-	int (*update)(struct backlight *b);
-	unsigned int poll_interval;
 
 	/* Internal */
-	struct sleeptimer timer;
 	int autodim_enabled;
 	int framebuffer_fd;
 	int fb_blanked;

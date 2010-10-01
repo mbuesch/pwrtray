@@ -136,15 +136,6 @@ static int default_screen_is_locked(struct backlight *b)
 	return -EOPNOTSUPP;
 }
 
-static void backlight_poll_callback(struct sleeptimer *timer)
-{
-	struct backlight *b = container_of(timer, struct backlight, timer);
-
-	b->update(b);
-	sleeptimer_set_timeout_relative(&b->timer, b->poll_interval);
-	sleeptimer_enqueue(&b->timer);
-}
-
 void backlight_init(struct backlight *b)
 {
 	memset(b, 0, sizeof(*b));
@@ -155,16 +146,6 @@ void backlight_init(struct backlight *b)
 	b->set_brightness = default_set_brightness;
 	b->screen_lock = default_screen_lock;
 	b->screen_is_locked = default_screen_is_locked;
-}
-
-static void backlight_start(struct backlight *b)
-{
-	if (b->poll_interval) {
-		b->update(b);
-		sleeptimer_init(&b->timer, backlight_poll_callback);
-		sleeptimer_set_timeout_relative(&b->timer, b->poll_interval);
-		sleeptimer_enqueue(&b->timer);
-	}
 }
 
 struct backlight * backlight_probe(void)
@@ -183,7 +164,6 @@ struct backlight * backlight_probe(void)
 
 ok:
 	fbblank_init(b);
-	backlight_start(b);
 
 	return b;
 }
