@@ -214,6 +214,17 @@ int backlight_notify_state_change(struct backlight *b)
 	return 0;
 }
 
+static void update_screen_blanking(struct backlight *b)
+{
+	if (b->current_brightness(b)) {
+		framebuffer_blank(b, 0);
+		unblock_x11_input(&backend.x11lock);
+	} else {
+		block_x11_input(&backend.x11lock);
+		framebuffer_blank(b, 1);
+	}
+}
+
 int backlight_set_brightness(struct backlight *b, int value)
 {
 	int err;
@@ -221,13 +232,19 @@ int backlight_set_brightness(struct backlight *b, int value)
 	err = b->set_brightness(b, value);
 	if (err)
 		return err;
-	if (value) {
-		framebuffer_blank(b, 0);
-		unblock_x11_input(&backend.x11lock);
-	} else {
-		block_x11_input(&backend.x11lock);
-		framebuffer_blank(b, 1);
-	}
+	update_screen_blanking(b);
+
+	return 0;
+}
+
+int backlight_screen_lock(struct backlight *b, int lock)
+{
+	int err;
+
+	err = b->screen_lock(b, lock);
+	if (err)
+		return err;
+	update_screen_blanking(b);
 
 	return 0;
 }

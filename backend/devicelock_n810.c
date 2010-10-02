@@ -40,7 +40,7 @@ static void devicelock_n810_toggle(struct devicelock *s)
 		autodim_suspend(backend.autodim);
 
 	/* Set backlight lock state */
-	err = backend.backlight->screen_lock(backend.backlight, lock);
+	err = backlight_screen_lock(backend.backlight, lock);
 	if (err)
 		logerr("Failed to set backlight lock state\n");
 	/* Set touchscreen lock state */
