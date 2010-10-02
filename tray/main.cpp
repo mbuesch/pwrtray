@@ -35,6 +35,8 @@ TrayWindow::TrayWindow(TrayIcon *_tray)
  : QMenu(NULL)
  , tray (_tray)
 {
+	struct pt_message m;
+	int err;
 	QLabel *label;
 	QGridLayout *l = new QGridLayout(this);
 	setLayout(l);
@@ -55,6 +57,15 @@ TrayWindow::TrayWindow(TrayIcon *_tray)
 
 	update();
 
+	err = tray->getBackend()->getBacklightState(&m);
+	if (err) {
+		cerr << "Failed to fetch initial backlight state" << endl;
+	} else {
+		bool autodim = !!(m.bl_stat.flags & htonl(PT_BL_FLG_AUTODIM));
+		brAutoAdj->setCheckState(autodim ? Qt::Checked : Qt::Unchecked);
+		brightness->setValue(ntohl(m.bl_stat.default_autodim_max_percent));
+	}
+
 	connect(brightness, SIGNAL(valueChanged(int)),
 		this, SLOT(desiredBrightnessChanged(int)));
 
@@ -69,10 +80,19 @@ TrayWindow::~TrayWindow()
 void TrayWindow::brightnessAutoAdjChanged(int unused)
 {
 	bool on = (brAutoAdj->checkState() == Qt::Checked);
-	int err = tray->getBackend()->setBacklightAutodim(on);
-	if (err)
-		cerr << "Failed to set auto-dimming" << endl;
-	brightness->setEnabled(!on);
+	int err;
+
+	if (on) {
+		err = tray->getBackend()->setBacklightAutodim(true,
+				brightness->value());
+		if (err)
+			cerr << "Failed to enable auto-dimming" << endl;
+	} else {
+		err = tray->getBackend()->setBacklightAutodim(false, 0);
+		if (err)
+			cerr << "Failed to disable auto-dimming" << endl;
+	}
+	updateBacklightSlider();
 }
 
 void TrayWindow::update()
@@ -119,18 +139,31 @@ void TrayWindow::updateBacklightSlider(struct pt_message *msg)
 		msg = &m;
 	}
 
-	step = ntohl(msg->bl_stat.brightness_step);
-	brightness->setSingleStep(step);
-	brightness->setMinimum(max(step, (unsigned int)ntohl(msg->bl_stat.min_brightness)));
-	brightness->setMaximum(ntohl(msg->bl_stat.max_brightness));
-	brightness->setValue(ntohl(msg->bl_stat.brightness));
-	brAutoAdj->setCheckState((msg->bl_stat.flags & htonl(PT_BL_FLG_AUTODIM)) ?
-				 Qt::Checked : Qt::Unchecked);
+	if (brAutoAdj->checkState() == Qt::Checked) {
+		brightness->setSingleStep(1);
+		brightness->setMinimum(1);
+		brightness->setMaximum(100);
+	} else {
+		step = ntohl(msg->bl_stat.brightness_step);
+		brightness->setSingleStep(step);
+		brightness->setMinimum(max(step, (unsigned int)ntohl(msg->bl_stat.min_brightness)));
+		brightness->setMaximum(ntohl(msg->bl_stat.max_brightness));
+		brightness->setValue(ntohl(msg->bl_stat.brightness));
+	}
 }
 
 void TrayWindow::desiredBrightnessChanged(int newVal)
 {
-	tray->getBackend()->setBacklight(newVal);
+	bool autodim = (brAutoAdj->checkState() == Qt::Checked);
+	int err;
+
+	if (autodim) {
+		err = tray->getBackend()->setBacklightAutodim(true, newVal);
+		if (err)
+			cerr << "Failed to set autodim max" << endl;
+	} else {
+		tray->getBackend()->setBacklight(newVal);
+	}
 }
 
 void TrayWindow::showEvent(QShowEvent *event)

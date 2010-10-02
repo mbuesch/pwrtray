@@ -11,6 +11,7 @@
 #define min(a, b)		((a) < (b) ? (a) : (b))
 #define max(a, b)		((a) > (b) ? (a) : (b))
 #define clamp(v, mi, ma)	max(min(v, ma), mi)
+#define round_up(n, s)		((((n) + (s) - 1) / (s)) * (s))
 
 #define ARRAY_SIZE(x)		(sizeof(x) / sizeof((x)[0]))
 

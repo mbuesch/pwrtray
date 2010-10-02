@@ -35,6 +35,7 @@ protected slots:
 	void brightnessAutoAdjChanged(int unused);
 
 protected:
+	int max_autodim;
 	TrayIcon *tray;
 	QProgressBar *battBar;
 	QLabel *battLabel;

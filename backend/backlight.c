@@ -16,6 +16,7 @@
 #include "log.h"
 #include "main.h"
 #include "x11lock.h"
+#include "util.h"
 
 #include "backlight_class.h"
 #include "backlight_omapfb.h"
@@ -178,9 +179,20 @@ void backlight_destroy(struct backlight *b)
 
 int backlight_fill_pt_message_stat(struct backlight *b, struct pt_message *msg)
 {
-	msg->bl_stat.min_brightness = htonl(b->min_brightness(b));
-	msg->bl_stat.max_brightness = htonl(b->max_brightness(b));
-	msg->bl_stat.brightness_step = htonl(b->brightness_step(b));
+	int min_brightness, max_brightness, brightness_step, autodim_max;
+
+	min_brightness = b->min_brightness(b);
+	max_brightness = b->max_brightness(b);
+	brightness_step = b->brightness_step(b);
+
+	autodim_max = config_get_int(backend.config, "BACKLIGHT",
+				     "autodim_default_max", 100);
+	autodim_max = clamp(autodim_max, 0, 100);
+
+	msg->bl_stat.default_autodim_max_percent = htonl(autodim_max);
+	msg->bl_stat.min_brightness = htonl(min_brightness);
+	msg->bl_stat.max_brightness = htonl(max_brightness);
+	msg->bl_stat.brightness_step = htonl(brightness_step);
 	msg->bl_stat.brightness = htonl(b->current_brightness(b));
 	msg->bl_stat.flags = b->autodim_enabled ? htonl(PT_BL_FLG_AUTODIM) : 0;
 

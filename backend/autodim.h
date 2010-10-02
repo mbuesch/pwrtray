@@ -36,6 +36,7 @@ void autodim_free(struct autodim *ad);
 void autodim_suspend(struct autodim *ad);
 void autodim_resume(struct autodim *ad);
 
+void autodim_set_max_percent(struct autodim *ad, int max_percent);
 void autodim_handle_input_event(struct autodim *ad);
 
 #endif /* BACKEND_AUTODIM_H_ */

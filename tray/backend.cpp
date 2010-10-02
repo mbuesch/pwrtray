@@ -237,13 +237,14 @@ int Backend::setBacklight(int value)
 	return sendMessageSyncReply(&msg);
 }
 
-int Backend::setBacklightAutodim(bool enable)
+int Backend::setBacklightAutodim(bool enable, int max_percent)
 {
 	struct pt_message msg;
 
 	memset(&msg, 0, sizeof(msg));
 	msg.id = htons(PTREQ_BL_AUTODIM);
-	msg.flags = enable ? htons(PT_FLG_ENABLE) : 0;
+	msg.bl_autodim.flags = enable ? htonl(PT_AUTODIM_FLG_ENABLE) : 0;
+	msg.bl_autodim.max_percent = htonl(max_percent);
 
 	return sendMessageSyncReply(&msg);
 }

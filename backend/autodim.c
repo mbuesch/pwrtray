@@ -31,6 +31,7 @@
 
 static void autodim_set_backlight(struct autodim *ad, unsigned int percent)
 {
+	percent = min(percent, ad->max_percent);
 	if (percent != ad->bl_percent) {
 		ad->bl_percent = percent;
 		backlight_set_percentage(ad->bl, percent);
@@ -186,11 +187,9 @@ int autodim_init(struct autodim *ad, struct backlight *bl,
 	ad->nr_fds = i;
 	dir_entries_free(&dir_entries);
 
-	ad->max_percent = clamp(config_get_int(config,
-					       "BACKLIGHT",
-					       "autodim_max",
-					       100),
-				0, 100);
+	ad->max_percent = config_get_int(config, "BACKLIGHT",
+					 "autodim_default_max", 100);
+	ad->max_percent = clamp(ad->max_percent, 0, 100);
 	ad->bl_percent = ad->max_percent;
 	err = autodim_steps_get(ad, config);
 	if (err)
@@ -233,7 +232,7 @@ void autodim_destroy(struct autodim *ad)
 	free(ad->fds);
 	ad->fds = NULL;
 
-	backlight_set_percentage(ad->bl, ad->max_percent);
+	backlight_set_percentage(ad->bl, 100);
 
 	logdebug("Auto-dimming disabled\n");
 }
@@ -265,6 +264,15 @@ void autodim_resume(struct autodim *ad)
 		autodim_handle_input_event(ad);
 		autodim_timer_start(ad);
 		logdebug("Auto-dimming resumed\n");
+	}
+}
+
+void autodim_set_max_percent(struct autodim *ad, int max_percent)
+{
+	max_percent = clamp(max_percent, 0, 100);
+	if (ad->max_percent != max_percent) {
+		ad->max_percent = max_percent;
+		autodim_handle_input_event(ad);
 	}
 }
 

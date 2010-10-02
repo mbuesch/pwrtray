@@ -38,6 +38,9 @@ enum {
 /* (struct pt_message *)->bl_stat.flags */
 #define PT_BL_FLG_AUTODIM	(1 << 0) /* Auto dimming enabled */
 
+/* (struct pt_message *)->bl_autodim.flags */
+#define PT_AUTODIM_FLG_ENABLE	(1 << 0) /* Auto dimming enable */
+
 /* (struct pt_message *)->flags */
 #define PT_FLG_REPLY		(1 << 0) /* This is a reply to a previous message */
 #define PT_FLG_OK		(1 << 1) /* There was no error */
@@ -53,10 +56,15 @@ struct pt_message {
 			int32_t max_brightness;
 			int32_t brightness_step;
 			int32_t brightness;
+			int32_t default_autodim_max_percent;
 		} PT_PACKED bl_stat;
 		struct { /* Set backlight */
 			int32_t brightness;
 		} PT_PACKED bl_set;
+		struct { /* Autodim controls */
+			uint32_t flags;
+			int32_t max_percent;
+		} PT_PACKED bl_autodim;
 		struct { /* Battery state */
 			uint32_t flags;
 			int32_t min_charge;

@@ -16,9 +16,9 @@ xlock:
 	$(MAKE) -C xlock all
 
 clean:
-	$(foreach TARGET,$(ALL_TARGETS),$(MAKE) -C $(TARGET) clean && ) true
+	for target in $(ALL_TARGETS); do $(MAKE) -C $$target clean; done
 
 install: $(ALL_TARGETS)
-	$(foreach TARGET,$(ALL_TARGETS),$(MAKE) -C $(TARGET) install && ) true
+	for target in $(ALL_TARGETS); do $(MAKE) -C $$target install; done
 
 .PHONY: all backend tray xlock clean install
