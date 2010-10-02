@@ -1,8 +1,12 @@
 # Enable xlock build?
 export FEATURE_XLOCK	?= y
+# Enable tray frontend build?
+export FEATURE_TRAY	?= y
 
 
-ALL_TARGETS	:= backend tray $(if $(filter 1 y,$(FEATURE_XLOCK)),xlock)
+ALL_TARGETS	:= backend \
+		   $(if $(filter 1 y,$(FEATURE_TRAY)),tray) \
+		   $(if $(filter 1 y,$(FEATURE_XLOCK)),xlock)
 
 all: $(ALL_TARGETS)
 
