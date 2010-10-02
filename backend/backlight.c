@@ -216,12 +216,12 @@ int backlight_notify_state_change(struct backlight *b)
 
 static void update_screen_blanking(struct backlight *b)
 {
-	if (b->current_brightness(b)) {
-		framebuffer_blank(b, 0);
-		unblock_x11_input(&backend.x11lock);
-	} else {
+	if (b->screen_is_locked(b) || b->current_brightness(b) == 0) {
 		block_x11_input(&backend.x11lock);
 		framebuffer_blank(b, 1);
+	} else {
+		framebuffer_blank(b, 0);
+		unblock_x11_input(&backend.x11lock);
 	}
 }
 
