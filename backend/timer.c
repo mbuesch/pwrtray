@@ -42,6 +42,8 @@ static unsigned int id_counter;
 #  define __NR_clock_gettime	263
 # elif defined(__mips__)
 #  define __NR_clock_gettime	(__NR_Linux + 263)
+# elif defined(__avr32__) || defined(__AVR32__)
+#  define __NR_clock_gettime	216
 # else
 #  error "__NR_clock_gettime unknown"
 # endif
@@ -58,6 +60,8 @@ static unsigned int id_counter;
 #  define __NR_clock_nanosleep	265
 # elif defined(__mips__)
 #  define __NR_clock_nanosleep	(__NR_Linux + 265)
+# elif defined(__avr32__) || defined(__AVR32__)
+#  define __NR_clock_nanosleep	218
 # else
 #  error "__NR_clock_nanosleep unknown"
 # endif
