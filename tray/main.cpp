@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2010 Michael Buesch <mb@bu3sch.de>
+ *   Copyright (C) 2010-2011 Michael Buesch <mb@bu3sch.de>
  *
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License
@@ -254,14 +254,19 @@ static void msleep(unsigned int msecs)
 static bool waitForSystray()
 {
 	unsigned int count = 0;
+
+	cout << "PwrTray: Waiting for systray ..." << flush;
 	while (!QSystemTrayIcon::isSystemTrayAvailable()) {
-		if (count++ >= 100) {
-			QMessageBox::critical(NULL, "No systray found",
-					      "Could not find a systray.");
+		if (count++ >= 240) {
+			QMessageBox::critical(NULL, "PwrTray: No systray found",
+					      "PwrTray: Could not find a systray.");
 			return false;
 		}
-		msleep(100);
+		msleep(500);
+		cout << "." << flush;
 	}
+	cout << " found" << endl;
+
 	return true;
 }
 
