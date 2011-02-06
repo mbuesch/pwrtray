@@ -28,7 +28,7 @@ static int battery_n810_update(struct battery *b)
 	int err, value;
 	int value_changed = 0;
 
-	err = file_read_int(bn->charge_file, &value, 0);
+	err = file_read_int(bn->level_file, &value, 0);
 	if (err) {
 		logerr("WARNING: Failed to read battery charge status file\n");
 		return -1;
@@ -54,24 +54,24 @@ static void battery_n810_destroy(struct battery *b)
 {
 	struct battery_n810 *bn = container_of(b, struct battery_n810, battery);
 
-	file_close(bn->charge_file);
+	file_close(bn->level_file);
 	free(bn);
 }
 
 struct battery * battery_n810_probe(void)
 {
-	struct fileaccess *charge_file;
+	struct fileaccess *level_file;
 	struct battery_n810 *bn;
 
-	charge_file = sysfs_file_open(O_RDONLY, "/devices/platform/n810bm/batt_charge");
-	if (!charge_file)
+	level_file = sysfs_file_open(O_RDONLY, "/devices/platform/n810bm/battery_level");
+	if (!level_file)
 		goto error;
 
 	bn = zalloc(sizeof(*bn));
 	if (!bn)
 		goto err_close;
 
-	bn->charge_file = charge_file;
+	bn->level_file = level_file;
 
 	battery_init(&bn->battery);
 	bn->battery.destroy = battery_n810_destroy;
@@ -82,7 +82,7 @@ struct battery * battery_n810_probe(void)
 	return &bn->battery;
 
 err_close:
-	file_close(charge_file);
+	file_close(level_file);
 error:
 	return NULL;
 }

@@ -6,7 +6,7 @@
 struct battery_n810 {
 	struct battery battery;
 
-	struct fileaccess *charge_file;
+	struct fileaccess *level_file;
 	int charge;
 };
 
