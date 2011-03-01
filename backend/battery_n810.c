@@ -65,6 +65,10 @@ struct battery * battery_n810_probe(void)
 
 	level_file = sysfs_file_open(O_RDONLY, "/devices/platform/n810bm/battery_level");
 	if (!level_file)
+		level_file = sysfs_file_open(O_RDONLY, "/devices/platform/tahvo/tahvo-n810bm/battery_level");
+	if (!level_file)
+		level_file = sysfs_file_open(O_RDONLY, "/devices/platform/retu/retu-n810bm/battery_level");
+	if (!level_file)
 		goto error;
 
 	bn = zalloc(sizeof(*bn));
