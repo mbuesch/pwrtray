@@ -20,6 +20,7 @@
 
 #include "backlight_class.h"
 #include "backlight_omapfb.h"
+#include "backlight_dummy.h"
 
 #include <errno.h>
 #include <string.h>
@@ -157,6 +158,9 @@ struct backlight * backlight_probe(void)
 	if (b)
 		goto ok;
 	b = backlight_class_probe();
+	if (b)
+		goto ok;
+	b = backlight_dummy_probe();
 	if (b)
 		goto ok;
 

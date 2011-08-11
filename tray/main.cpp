@@ -105,6 +105,7 @@ void TrayWindow::updateBattBar(struct pt_message *msg)
 {
 	struct pt_message m;
 	int err;
+	unsigned int minval, maxval, curval;
 
 	if (!msg) {
 		err = tray->getBackend()->getBatteryState(&m);
@@ -115,13 +116,24 @@ void TrayWindow::updateBattBar(struct pt_message *msg)
 		msg = &m;
 	}
 
-	if (msg->bat_stat.flags & htonl(PT_BAT_FLG_ONAC))
-		battLabel->setText("Batt (AC):");
-	else
-		battLabel->setText("Batt:");
-	battBar->setMinimum(ntohl(msg->bat_stat.min_charge));
-	battBar->setMaximum(ntohl(msg->bat_stat.max_charge));
-	battBar->setValue(ntohl(msg->bat_stat.charge));
+	minval = ntohl(msg->bat_stat.min_charge);
+	maxval = ntohl(msg->bat_stat.max_charge);
+	curval = ntohl(msg->bat_stat.charge);
+	if (minval == maxval) {
+		/* No batt info */
+		minval = 0;
+		maxval = 1;
+		curval = 0;
+		battLabel->setText("No batt info");
+	} else {
+		if (msg->bat_stat.flags & htonl(PT_BAT_FLG_ONAC))
+			battLabel->setText("Batt (AC):");
+		else
+			battLabel->setText("Batt:");
+	}
+	battBar->setMinimum(minval);
+	battBar->setMaximum(maxval);
+	battBar->setValue(curval);
 }
 
 void TrayWindow::updateBacklightSlider(struct pt_message *msg)

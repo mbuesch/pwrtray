@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "list.h"
+
 
 #define __stringify(x)		#x
 #define stringify(x)		__stringify(x)
