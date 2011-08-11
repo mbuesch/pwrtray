@@ -140,7 +140,7 @@ struct backlight * backlight_omapfb_probe(void)
 	bo->level_file = level_file;
 	bo->max_level = max_level;
 
-	backlight_init(&bo->backlight);
+	backlight_init(&bo->backlight, "omapfb");
 	bo->backlight.max_brightness = backlight_omapfb_max_brightness;
 	bo->backlight.current_brightness = backlight_omapfb_current_brightness;
 	bo->backlight.set_brightness = backlight_omapfb_set_brightness;

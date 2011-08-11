@@ -117,7 +117,7 @@ struct backlight * backlight_class_probe(void)
 	bc->set_br_file = set_br_file;
 	bc->max_brightness = max_brightness;
 
-	backlight_init(&bc->backlight);
+	backlight_init(&bc->backlight, "class");
 	bc->backlight.max_brightness = backlight_class_max_brightness;
 	bc->backlight.current_brightness = backlight_class_current_brightness;
 	bc->backlight.set_brightness = backlight_class_set_brightness;

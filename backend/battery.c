@@ -53,9 +53,10 @@ static void battery_poll_callback(struct sleeptimer *timer)
 	sleeptimer_enqueue(&b->timer);
 }
 
-void battery_init(struct battery *b)
+void battery_init(struct battery *b, const char *name)
 {
 	memset(b, 0, sizeof(*b));
+	b->name = name;
 	b->on_ac = default_on_ac;
 	b->min_charge = default_min_charge;
 	b->max_charge = default_max_charge;
@@ -91,6 +92,8 @@ struct battery * battery_probe(void)
 
 ok:
 	battery_start(b);
+	logdebug("Initialied battery driver \"%s\"\n", b->name);
+
 	return b;
 }
 

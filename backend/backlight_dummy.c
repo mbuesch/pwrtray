@@ -36,7 +36,7 @@ struct backlight * backlight_dummy_probe(void)
 	if (!bd)
 		return NULL;
 
-	backlight_init(&bd->backlight);
+	backlight_init(&bd->backlight, "dummy");
 	bd->backlight.max_brightness = backlight_dummy_max_brightness;
 	bd->backlight.destroy = backlight_dummy_destroy;
 

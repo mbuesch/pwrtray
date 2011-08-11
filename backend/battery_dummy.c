@@ -36,7 +36,7 @@ struct battery * battery_dummy_probe(void)
 	if (!bd)
 		return NULL;
 
-	battery_init(&bd->battery);
+	battery_init(&bd->battery, "dummy");
 	bd->battery.destroy = battery_dummy_destroy;
 	bd->battery.max_charge = battery_dummy_max_charge;
 

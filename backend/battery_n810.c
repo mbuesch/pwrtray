@@ -77,7 +77,7 @@ struct battery * battery_n810_probe(void)
 
 	bn->level_file = level_file;
 
-	battery_init(&bn->battery);
+	battery_init(&bn->battery, "n810");
 	bn->battery.destroy = battery_n810_destroy;
 	bn->battery.update = battery_n810_update;
 	bn->battery.current_charge = battery_n810_current_charge;

@@ -160,7 +160,7 @@ struct battery * battery_powerbook_probe(void)
 	bp->info_file = info;
 	bp->stat_file = stat;
 
-	battery_init(&bp->battery);
+	battery_init(&bp->battery, "powerbook");
 	bp->battery.destroy = battery_powerbook_destroy;
 	bp->battery.update = battery_powerbook_update;
 	bp->battery.on_ac = battery_powerbook_on_ac;

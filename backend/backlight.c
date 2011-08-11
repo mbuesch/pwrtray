@@ -138,9 +138,10 @@ static int default_screen_is_locked(struct backlight *b)
 	return -EOPNOTSUPP;
 }
 
-void backlight_init(struct backlight *b)
+void backlight_init(struct backlight *b, const char *name)
 {
 	memset(b, 0, sizeof(*b));
+	b->name = name;
 	b->min_brightness = default_min_brightness;
 	b->max_brightness = default_max_brightness;
 	b->brightness_step = default_brightness_step;
@@ -169,6 +170,7 @@ struct backlight * backlight_probe(void)
 
 ok:
 	fbblank_init(b);
+	logdebug("Initialized backlight driver \"%s\"\n", b->name);
 
 	return b;
 }

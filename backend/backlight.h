@@ -5,6 +5,8 @@
 
 
 struct backlight {
+	const char *name;
+
 	int (*min_brightness)(struct backlight *b);
 	int (*max_brightness)(struct backlight *b);
 	int (*brightness_step)(struct backlight *b);
@@ -21,7 +23,7 @@ struct backlight {
 	int fb_blanked;
 };
 
-void backlight_init(struct backlight *b);
+void backlight_init(struct backlight *b, const char *name);
 
 struct backlight * backlight_probe(void);
 void backlight_destroy(struct backlight *b);

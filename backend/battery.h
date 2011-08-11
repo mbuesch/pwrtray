@@ -6,6 +6,8 @@
 
 
 struct battery {
+	const char *name;
+
 	int (*on_ac)(struct battery *b);
 	int (*min_charge)(struct battery *b);
 	int (*max_charge)(struct battery *b);
@@ -19,7 +21,7 @@ struct battery {
 	struct sleeptimer timer;
 };
 
-void battery_init(struct battery *b);
+void battery_init(struct battery *b, const char *name);
 
 struct battery * battery_probe(void);
 void battery_destroy(struct battery *b);
