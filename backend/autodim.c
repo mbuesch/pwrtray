@@ -16,6 +16,7 @@
 #include "log.h"
 #include "fileaccess.h"
 #include "util.h"
+#include "main.h"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -269,6 +270,10 @@ void autodim_resume(struct autodim *ad)
 
 void autodim_set_max_percent(struct autodim *ad, int max_percent)
 {
+	if (max_percent < 0) {
+		max_percent = config_get_int(backend.config, "BACKLIGHT",
+					     "autodim_default_max", 100);
+	}
 	max_percent = clamp(max_percent, 0, 100);
 	if (ad->max_percent != max_percent) {
 		ad->max_percent = max_percent;

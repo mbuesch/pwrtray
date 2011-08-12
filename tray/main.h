@@ -41,6 +41,8 @@ protected:
 	QLabel *battLabel;
 	QSlider *brightness;
 	QCheckBox *brAutoAdj;
+	bool blockBrightnessChange;
+	int defaultAutodimMax;
 };
 
 class TrayIcon : public QSystemTrayIcon
