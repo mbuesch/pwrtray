@@ -402,7 +402,10 @@ static void shutdown_cleanup(void)
 	force_disconnect_clients();
 
 	xevrep_disable(&backend.xevrep);
+	xevrep_sigchld(&backend.xevrep, 1);
+
 	unblock_x11_input(&backend.x11lock);
+	x11lock_sigchld(&backend.x11lock, 1);
 
 	autodim_destroy(backend.autodim);
 	autodim_free(backend.autodim);
@@ -454,11 +457,19 @@ static void signal_input_event_2(int signal)
 		backend.devicelock->event(backend.devicelock);
 }
 
+static void signal_child(int signal)
+{
+	x11lock_sigchld(&backend.x11lock, 0);
+	xevrep_sigchld(&backend.xevrep, 0);
+}
+
 #define sigset_set_blocked_sigs(setp) do {	\
 		sigemptyset((setp));		\
+		sigaddset((setp), SIGCHLD);	\
 		sigaddset((setp), SIGUSR1);	\
 		sigaddset((setp), SIGUSR2);	\
 		sigaddset((setp), SIGIO);	\
+		sigaddset((setp), SIGPIPE);	\
 		sigaddset((setp), SIGINT);	\
 		sigaddset((setp), SIGTERM);	\
 	} while (0)
@@ -509,6 +520,7 @@ static int setup_signal_handlers(void)
 	err |= install_sighandler(SIGIO, signal_async_io);
 	err |= install_sighandler(SIGUSR1, signal_input_event_1);
 	err |= install_sighandler(SIGUSR2, signal_input_event_2);
+	err |= install_sighandler(SIGCHLD, signal_child);
 
 	return err ? -1 : 0;
 }

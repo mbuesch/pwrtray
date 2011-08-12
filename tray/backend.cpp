@@ -39,8 +39,18 @@ Backend::Backend()
 
 Backend::~Backend()
 {
-	if (fd != -1)
+	struct pt_message msg;
+	int err;
+
+	if (fd != -1) {
+		memset(&msg, 0, sizeof(msg));
+		msg.id = htons(PTREQ_XEVREP);
+		err = sendMessageSyncReply(&msg);
+		if (err)
+			cerr << "Failed to disable X11 input event notifications" << endl;
+
 		close(fd);
+	}
 }
 
 int Backend::connectToBackend()

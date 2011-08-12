@@ -76,7 +76,34 @@ int xevrep_enable(struct xevrep *xr)
 
 void xevrep_disable(struct xevrep *xr)
 {
-	int err, status;
+	int err;
+	pid_t pid;
+
+#ifndef FEATURE_XEVREP
+	return;
+#endif
+
+	if (!xr)
+		return;
+	pid = xr->helper_pid;
+	if (!pid)
+		return;
+
+	block_signals();
+
+	xr->killed = 1;
+	err = kill(pid, SIGTERM);
+	if (err) {
+		logerr("xevrep_disable: Failed to kill helper process PID %d\n",
+		       (int)pid);
+	}
+
+	unblock_signals();
+}
+
+void xevrep_sigchld(struct xevrep *xr, int wait)
+{
+	int status;
 	pid_t pid, res;
 
 #ifndef FEATURE_XEVREP
@@ -88,25 +115,27 @@ void xevrep_disable(struct xevrep *xr)
 	pid = xr->helper_pid;
 	if (!pid)
 		return;
-	xr->helper_pid = 0;
 
-	err = kill(pid, SIGTERM);
-	if (err) {
-		logerr("xevrep_disable: Failed to kill helper process PID %d\n",
-		       (int)pid);
-		return;
-	}
-	res = waitpid(pid, &status, 0);
+	res = waitpid(pid, &status, wait ? 0 : WNOHANG);
 	if (res < 0) {
-		logerr("xevrep_disable: Failed to waitpid() for PID %d\n",
-		       (int)pid);
+		if (errno == ECHILD)
+			return;
+		logerr("xevrep_sigchld: waitpid failed for PID %d: %s\n",
+		       (int)pid, strerror(errno));
 		return;
 	}
+	if (!xr->killed) {
+		logerr("xevrep_sigchld: X11 input event helper was "
+		       "murdered by a stranger.\n");
+	}
+	xr->helper_pid = 0;
+	xr->killed = 0;
+
 	if (status) {
-		logerr("xevrep_disable: The helper process "
+		logerr("xevrep_sigchld: The helper process "
 		       "returned an error code: %d\n", status);
 	} else {
-		logdebug("Killed X11 input event helper (pid=%d)\n",
+		logdebug("X11 input event helper (pid=%d) terminated\n",
 			 (int)pid);
 	}
 }

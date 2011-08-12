@@ -15,6 +15,7 @@
 #include "x11lock.h"
 #include "log.h"
 #include "util.h"
+#include "main.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -65,7 +66,35 @@ int block_x11_input(struct x11lock *xl)
 
 void unblock_x11_input(struct x11lock *xl)
 {
-	int err, status;
+	int err;
+	pid_t pid;
+
+#ifndef FEATURE_XLOCK
+	return;
+#endif
+
+	if (!xl)
+		return;
+	pid = xl->helper_pid;
+	if (!pid)
+		return;
+
+	block_signals();
+
+	xl->killed = 1;
+	err = kill(pid, SIGTERM);
+	if (err) {
+		logerr("unlock_x11_input: Failed to kill helper process PID %d\n",
+		       (int)pid);
+		return;
+	}
+
+	unblock_signals();
+}
+
+void x11lock_sigchld(struct x11lock *xl, int wait)
+{
+	int status;
 	pid_t pid, res;
 
 #ifndef FEATURE_XLOCK
@@ -77,25 +106,27 @@ void unblock_x11_input(struct x11lock *xl)
 	pid = xl->helper_pid;
 	if (!pid)
 		return;
-	xl->helper_pid = 0;
 
-	err = kill(pid, SIGTERM);
-	if (err) {
-		logerr("unlock_x11_input: Failed to kill helper process PID %d\n",
-		       (int)pid);
-		return;
-	}
-	res = waitpid(pid, &status, 0);
+	res = waitpid(pid, &status, wait ? 0 : WNOHANG);
 	if (res < 0) {
-		logerr("unlock_x11_input: Failed to waitpid() for PID %d\n",
-		       (int)pid);
+		if (errno == ECHILD)
+			return;
+		logerr("x11lock_sigchld: waitpid failed for PID %d: %s\n",
+		       (int)pid, strerror(errno));
 		return;
 	}
+	if (!xl->killed) {
+		logerr("x11lock_sigchld: X11 lock helper was "
+		       "murdered by a stranger.\n");
+	}
+	xl->helper_pid = 0;
+	xl->killed = 0;
+
 	if (status) {
-		logerr("unlock_x11_input: The lock helper process "
+		logerr("x11lock_sigchld: The helper process "
 		       "returned an error code: %d\n", status);
 	} else {
-		logdebug("Killed X11 input blocker helper (pid=%d)\n",
+		logdebug("X11 lock helper (pid=%d) terminated\n",
 			 (int)pid);
 	}
 }

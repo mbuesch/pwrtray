@@ -3,13 +3,16 @@
 
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/signal.h>
 
 
 struct x11lock {
-	pid_t helper_pid;
+	sig_atomic_t helper_pid;
+	sig_atomic_t killed;
 };
 
 int block_x11_input(struct x11lock *xl);
 void unblock_x11_input(struct x11lock *xl);
+void x11lock_sigchld(struct x11lock *xl, int wait);
 
 #endif /* BACKEND_X11LOCK_H_ */

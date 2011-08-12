@@ -26,6 +26,7 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/signal.h>
 
 
 using namespace std;
@@ -294,9 +295,44 @@ static bool waitForSystray()
 	return true;
 }
 
+static void signal_terminate(int signal)
+{
+	cout << "Terminating signal received." << endl;
+	QApplication::exit(0);
+}
+
+static int install_sighandler(int signal, void (*handler)(int))
+{
+	struct sigaction act;
+
+	memset(&act, 0, sizeof(act));
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
+	act.sa_handler = handler;
+
+	return sigaction(signal, &act, NULL);
+}
+
+static int setup_signal_handlers(void)
+{
+	int err = 0;
+
+	err |= install_sighandler(SIGINT, signal_terminate);
+	err |= install_sighandler(SIGTERM, signal_terminate);
+
+	return err ? -1 : 0;
+}
+
 int main(int argc, char **argv)
 {
+	int err;
+
 	QApplication app(argc, argv);
+	err = setup_signal_handlers();
+	if (err) {
+		cerr << "Failed to initilize signal handlers" << endl;
+		return 1;
+	}
 	if (!waitForSystray())
 		return 1;
 	TrayIcon icon;
