@@ -29,7 +29,7 @@ static void usage(FILE *fd, int argc, char **argv)
 	fprintf(fd, "  -B|--background             Fork into background\n");
 	fprintf(fd, "  -P|--pidfile PATH           Create a PID-file\n");
 	fprintf(fd, "  -l|--loglevel LEVEL         Set logging level\n");
-	fprintf(fd, "                              0=error, 1=info, 2=debug\n");
+	fprintf(fd, "                              0=error, 1=info, 2=debug, 3=verbose\n");
 	fprintf(fd, "  -L|--logfile PATH           Write log to file\n");
 	fprintf(fd, "  -f|--force                  Force mode\n");
 	fprintf(fd, "\n");
