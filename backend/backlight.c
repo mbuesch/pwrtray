@@ -135,7 +135,7 @@ static int default_screen_lock(struct backlight *b, int lock)
 
 static int default_screen_is_locked(struct backlight *b)
 {
-	return -EOPNOTSUPP;
+	return 0;
 }
 
 void backlight_init(struct backlight *b, const char *name)
@@ -222,8 +222,12 @@ int backlight_notify_state_change(struct backlight *b)
 
 static void update_screen_blanking(struct backlight *b)
 {
-	if (b->screen_is_locked(b) || b->current_brightness(b) == 0) {
-		block_x11_input(&backend.x11lock);
+	int brightness = b->current_brightness(b);
+	int screen_locked = b->screen_is_locked(b);
+
+	if (screen_locked || brightness == 0) {
+		if (screen_locked)
+			block_x11_input(&backend.x11lock);
 		framebuffer_blank(b, 1);
 	} else {
 		framebuffer_blank(b, 0);
