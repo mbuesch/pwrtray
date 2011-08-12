@@ -1,0 +1,43 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          pwrtray-backend
+# Required-Start:    $syslog $local_fs dbus bluetooth
+# Required-Stop:     
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: pwrtray-backend daemon
+# Description:       Tiny power control daemon
+### END INIT INFO
+
+PIDFILE="/run/pwrtray-backend.pid"
+
+export PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+
+case "$1" in
+	start)
+		pwrtray-backend -B -P "$PIDFILE" && {
+			echo "Service pwrtray-backend started."
+		} || {
+			echo "Failed to start pwrtray-backend."
+		}
+		;;
+	stop)
+		[ -r "$PIDFILE" ] && {
+			kill `cat $PIDFILE`
+			echo "Service pwrtray-backend stopped."
+		} || {
+			echo "Service pwrtray-backend is not running."
+		}
+		;;
+	restart|reload|force-reload)
+		$0 stop
+		sleep 1
+		$0 start
+		;;
+	*)
+		echo "Usage $0 [start|stop|restart|reload|force-reload]"
+		exit 1
+		;;
+esac
+
+exit 0
