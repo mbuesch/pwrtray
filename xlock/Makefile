@@ -6,7 +6,7 @@ CFLAGS		?= -Os -Wall
 LDFLAGS		?=
 LIBS		?= -lX11
 DESTDIR		?=
-PREFIX		?= /usr
+PREFIX		?= /usr/local
 
 CFLAGS		+= -DPREFIX=$(PREFIX)
 

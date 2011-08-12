@@ -6,7 +6,7 @@ CFLAGS		?= -Os -Wall
 LDFLAGS		?=
 LIBS		?= -lrt
 DESTDIR		?=
-PREFIX		?= /usr
+PREFIX		?= /usr/local
 
 CFLAGS		+= -DPREFIX=$(PREFIX) -D_GNU_SOURCE
 CFLAGS          += $(if $(filter 1 y,$(FEATURE_XLOCK)),-DFEATURE_XLOCK=1)

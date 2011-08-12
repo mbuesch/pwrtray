@@ -16,7 +16,7 @@ LDFLAGS		?= -L/usr/lib \
 		  -L/usr/lib/qt4
 LIBS		?= -lQtCore -lQtGui
 DESTDIR		?=
-PREFIX		?= /usr
+PREFIX		?= /usr/local
 
 BIN		= pwrtray
 SRCS		= main.cpp backend.cpp
