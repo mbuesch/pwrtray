@@ -14,3 +14,6 @@ autodim_default_on=0
 # Framebuffer device for screen blanking
 #fbdev=/dev/fb0
 
+[XEVREP]
+# X11 input event reporter grace period (in milliseconds)
+grace_period=1000

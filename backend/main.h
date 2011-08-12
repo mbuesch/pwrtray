@@ -7,6 +7,7 @@
 #include "backlight.h"
 #include "devicelock.h"
 #include "x11lock.h"
+#include "xevrep.h"
 #include "autodim.h"
 
 
@@ -16,6 +17,7 @@ struct backend {
 	struct backlight *backlight;
 	struct devicelock *devicelock;
 	struct x11lock x11lock;
+	struct xevrep xevrep;
 	struct autodim *autodim;
 };
 

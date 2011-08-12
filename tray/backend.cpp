@@ -90,6 +90,13 @@ int Backend::connectToBackend()
 		goto err_free_noti;
 	}
 
+	memset(&msg, 0, sizeof(msg));
+	msg.id = htons(PTREQ_XEVREP);
+	msg.flags = htons(PT_FLG_ENABLE);
+	err = sendMessageSyncReply(&msg);
+	if (err)
+		cerr << "Failed to enable X11 input event notifications" << endl;
+
 	return 0;
 
 err_free_noti:

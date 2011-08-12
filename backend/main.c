@@ -119,6 +119,14 @@ static void received_message(struct client *c, struct pt_message *msg)
 			c->notifications_enabled = 0;
 		send_message(c, &reply, PT_FLG_OK);
 		break;
+	case PTREQ_XEVREP:
+		err = 0;
+		if (msg->flags & htons(PT_FLG_ENABLE))
+			err = xevrep_enable(&backend.xevrep);
+		else
+			xevrep_disable(&backend.xevrep);
+		send_message(c, &reply, err ? 0 : PT_FLG_OK);
+		break;
 	case PTREQ_BL_GETSTATE:
 		err = backlight_fill_pt_message_stat(backend.backlight,
 						     &reply);
@@ -393,6 +401,7 @@ static void shutdown_cleanup(void)
 
 	force_disconnect_clients();
 
+	xevrep_disable(&backend.xevrep);
 	unblock_x11_input(&backend.x11lock);
 
 	autodim_destroy(backend.autodim);

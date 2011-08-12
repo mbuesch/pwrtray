@@ -70,6 +70,24 @@ static void report_event(XIDeviceEvent *ev)
 		perror("kill");
 }
 
+static void signal_handler(int signal)
+{
+	printf("pwrtray-xevrep: terminated\n");
+	exit(0);
+}
+
+static int install_sighandler(int signal, void (*handler)(int))
+{
+	struct sigaction act;
+
+	memset(&act, 0, sizeof(act));
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
+	act.sa_handler = handler;
+
+	return sigaction(signal, &act, NULL);
+}
+
 static void usage(void)
 {
 	printf("Usage: pwrtray-xevrep PID SIGNAL GRACEPERIOD\n");
@@ -83,6 +101,7 @@ int main(int argc, char **argv)
 	unsigned char evmask_bits[1] = { 0, };
 	int res, tmp0, tmp1, xi_opcode;
 	int pid;
+	sigset_t sigset;
 
 	if (argc != 4) {
 		usage();
@@ -113,6 +132,15 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	sigemptyset(&sigset);
+	res = sigprocmask(SIG_SETMASK, &sigset, NULL);
+	res |= install_sighandler(SIGINT, signal_handler);
+	res |= install_sighandler(SIGTERM, signal_handler);
+	if (res) {
+		fprintf(stderr, "Failed to setup signal handlers\n");
+		return 1;
+	}
+
 	XISetMask(evmask_bits, XI_KeyPress);
 	XISetMask(evmask_bits, XI_ButtonPress);
 	XISetMask(evmask_bits, XI_Motion);
@@ -127,6 +155,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	printf("pwrtray-xevrep: Monitoring X11 input events...\n");
 	while (1) {
 		XEvent ev;
 		XGenericEventCookie *cookie = &ev.xcookie;

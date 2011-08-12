@@ -10,13 +10,14 @@ PREFIX		?= /usr/local
 
 CFLAGS		+= -DPREFIX=$(PREFIX) -D_GNU_SOURCE
 CFLAGS          += $(if $(filter 1 y,$(FEATURE_XLOCK)),-DFEATURE_XLOCK=1)
+CFLAGS          += $(if $(filter 1 y,$(FEATURE_XEVREP)),-DFEATURE_XEVREP=1)
 
 BIN		= pwrtray-backend
 BATT_SRCS	= battery.c battery_dummy.c battery_acpi.c battery_powerbook.c battery_n810.c
 BL_SRCS		= backlight.c backlight_dummy.c backlight_class.c backlight_omapfb.c
 DL_SRCS		= devicelock.c devicelock_n810.c
 SRCS		= main.c timer.c log.c args.c conf.c util.c fileaccess.c \
-		  autodim.c x11lock.c \
+		  autodim.c x11lock.c xevrep.c \
 		  $(BATT_SRCS) $(BL_SRCS) $(DL_SRCS)
 
 V		= @             # Verbose build:  make V=1

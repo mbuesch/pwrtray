@@ -17,6 +17,7 @@ extern "C" {
 enum {
 	PTREQ_PING			= 0x0,
 	PTREQ_WANT_NOTIFY,
+	PTREQ_XEVREP,
 
 	/* Backlight controls */
 	PTREQ_BL_GETSTATE		= 0x100,
