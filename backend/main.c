@@ -507,6 +507,7 @@ static int setup_signal_handlers(void)
 int mainloop(void)
 {
 	int err = -ENOMEM, value;
+	unsigned int timer_errors = 0;
 
 	log_initialize();
 
@@ -543,6 +544,11 @@ int mainloop(void)
 		err = sleeptimer_wait_next();
 		if (!err)
 			continue;
+		if (timer_errors < 10) {
+			timer_errors++;
+			logdebug("Mainloop: sleeptimer_wait_next() failed with %d (%s)\n",
+				 err, strerror(-err));
+		}
 		msleep(100);
 	}
 
