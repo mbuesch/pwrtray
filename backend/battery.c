@@ -19,6 +19,7 @@
 #include "battery_powerbook.h"
 #include "battery_n810.h"
 #include "battery_dummy.h"
+#include "battery_acpi.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -81,6 +82,9 @@ struct battery * battery_probe(void)
 	if (b)
 		goto ok;
 	b = battery_powerbook_probe();
+	if (b)
+		goto ok;
+	b = battery_acpi_probe();
 	if (b)
 		goto ok;
 	b = battery_dummy_probe();
