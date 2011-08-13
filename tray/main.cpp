@@ -67,10 +67,11 @@ TrayWindow::TrayWindow(TrayIcon *_tray)
 		bool autodim = !!(m.bl_stat.flags & htonl(PT_BL_FLG_AUTODIM));
 		brAutoAdj->setCheckState(autodim ? Qt::Checked : Qt::Unchecked);
 		defaultAutodimMax = ntohl(m.bl_stat.default_autodim_max_percent);
-		if (autodim) {
+		if (autodim)
 			brightness->setValue(defaultAutodimMax);
-		} else
+		else
 			brightness->setValue(ntohl(m.bl_stat.brightness));
+		updateBacklightToolTip(autodim);
 	}
 
 	connect(brightness, SIGNAL(valueChanged(int)),
@@ -82,6 +83,14 @@ TrayWindow::TrayWindow(TrayIcon *_tray)
 
 TrayWindow::~TrayWindow()
 {
+}
+
+void TrayWindow::updateBacklightToolTip(bool autodim)
+{
+	if (autodim)
+		tray->setBacklightToolTip("LCD in autodim mode");
+	else
+		tray->setBacklightToolTip("");
 }
 
 void TrayWindow::brightnessAutoAdjChanged(int unused)
@@ -105,6 +114,7 @@ void TrayWindow::brightnessAutoAdjChanged(int unused)
 			cerr << "Failed to disable auto-dimming" << endl;
 	}
 	updateBacklightSlider();
+	updateBacklightToolTip(on);
 }
 
 void TrayWindow::update()
@@ -118,6 +128,7 @@ void TrayWindow::updateBattBar(struct pt_message *msg)
 	struct pt_message m;
 	int err;
 	unsigned int minval, maxval, curval;
+	unsigned int range, percent;
 
 	if (!msg) {
 		err = tray->getBackend()->getBatteryState(&m);
@@ -146,6 +157,14 @@ void TrayWindow::updateBattBar(struct pt_message *msg)
 	battBar->setMinimum(minval);
 	battBar->setMaximum(maxval);
 	battBar->setValue(curval);
+
+	range = maxval - minval;
+	if (range)
+		percent = (curval - minval) * 100 / range;
+	else
+		percent = 0;
+	tray->setBatteryToolTip(battLabel->text() +
+				QString(" %1%").arg(percent));
 }
 
 void TrayWindow::updateBacklightSlider(struct pt_message *msg)
@@ -235,6 +254,27 @@ bool TrayIcon::init()
 		this, SLOT(backlightStateChanged(struct pt_message *)));
 
 	return true;
+}
+
+void TrayIcon::setBacklightToolTip(const QString &text)
+{
+	backlightToolTip = text;
+	updateToolTip();
+}
+
+void TrayIcon::setBatteryToolTip(const QString &text)
+{
+	batteryToolTip = text;
+	updateToolTip();
+}
+
+void TrayIcon::updateToolTip()
+{
+	QString tt(backlightToolTip);
+	if (!tt.isEmpty())
+		tt += "\n";
+	tt += batteryToolTip;
+	setToolTip(tt);
 }
 
 void TrayIcon::wasActivated(ActivationReason reason)

@@ -29,6 +29,7 @@ public:
 
 protected:
 	virtual void showEvent(QShowEvent *event);
+	void updateBacklightToolTip(bool autodim);
 
 protected slots:
 	void desiredBrightnessChanged(int newVal);
@@ -57,14 +58,22 @@ public:
 	Backend * getBackend()
 		{ return backend; }
 
+	void setBacklightToolTip(const QString &text);
+	void setBatteryToolTip(const QString &text);
+
 protected slots:
 	void wasActivated(QSystemTrayIcon::ActivationReason reason);
 	void batteryStateChanged(struct pt_message *msg);
 	void backlightStateChanged(struct pt_message *msg);
 
 protected:
+	void updateToolTip();
+
+protected:
 	TrayWindow *window;
 	Backend *backend;
+	QString backlightToolTip;
+	QString batteryToolTip;
 };
 
 #endif /* MAIN_H_ */
