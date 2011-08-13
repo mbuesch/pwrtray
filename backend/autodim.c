@@ -233,7 +233,7 @@ void autodim_destroy(struct autodim *ad)
 	free(ad->fds);
 	ad->fds = NULL;
 
-	backlight_set_percentage(ad->bl, 100);
+	backlight_set_percentage(ad->bl, max(ad->max_percent, 10));
 
 	logdebug("Auto-dimming disabled\n");
 }
