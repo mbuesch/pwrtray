@@ -128,9 +128,9 @@ void TrayWindow::updateBattBar(struct pt_message *msg)
 		msg = &m;
 	}
 
-	minval = ntohl(msg->bat_stat.min_charge);
-	maxval = ntohl(msg->bat_stat.max_charge);
-	curval = ntohl(msg->bat_stat.charge);
+	minval = ntohl(msg->bat_stat.min_level);
+	maxval = ntohl(msg->bat_stat.max_level);
+	curval = ntohl(msg->bat_stat.level);
 	if (minval == maxval) {
 		/* No batt info */
 		minval = 0;

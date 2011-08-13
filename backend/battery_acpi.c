@@ -90,14 +90,14 @@ static int battery_acpi_on_ac(struct battery *b)
 	return ba->on_ac;
 }
 
-static int battery_acpi_max_charge(struct battery *b)
+static int battery_acpi_max_level(struct battery *b)
 {
 	struct battery_acpi *ba = container_of(b, struct battery_acpi, battery);
 
 	return ba->charge_max;
 }
 
-static int battery_acpi_current_charge(struct battery *b)
+static int battery_acpi_charge_level(struct battery *b)
 {
 	struct battery_acpi *ba = container_of(b, struct battery_acpi, battery);
 
@@ -155,8 +155,8 @@ struct battery * battery_acpi_probe(void)
 	ba->battery.destroy = battery_acpi_destroy;
 	ba->battery.update = battery_acpi_update;
 	ba->battery.on_ac = battery_acpi_on_ac;
-	ba->battery.max_charge = battery_acpi_max_charge;
-	ba->battery.current_charge = battery_acpi_current_charge;
+	ba->battery.max_level = battery_acpi_max_level;
+	ba->battery.charge_level = battery_acpi_charge_level;
 	ba->battery.poll_interval = 10000;
 	snprintf(ba->ac_online_filename, sizeof(ba->ac_online_filename),
 		 "%s/%s/power_supply/AC0/online",

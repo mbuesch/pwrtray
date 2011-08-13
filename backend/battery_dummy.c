@@ -16,7 +16,7 @@
 #include "util.h"
 
 
-static int battery_dummy_max_charge(struct battery *b)
+static int battery_dummy_max_level(struct battery *b)
 {
 	return 0;
 }
@@ -38,7 +38,7 @@ struct battery * battery_dummy_probe(void)
 
 	battery_init(&bd->battery, "dummy");
 	bd->battery.destroy = battery_dummy_destroy;
-	bd->battery.max_charge = battery_dummy_max_charge;
+	bd->battery.max_level = battery_dummy_max_level;
 
 	return &bd->battery;
 }

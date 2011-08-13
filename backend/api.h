@@ -68,9 +68,9 @@ struct pt_message {
 		} PT_PACKED bl_autodim;
 		struct { /* Battery state */
 			uint32_t flags;
-			int32_t min_charge;
-			int32_t max_charge;
-			int32_t charge;
+			int32_t min_level;
+			int32_t max_level;
+			int32_t level;
 		} PT_PACKED bat_stat;
 		struct { /* Error code (only for PT_FLG_REPLY) */
 			int32_t code;

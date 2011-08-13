@@ -43,7 +43,7 @@ static int battery_n810_update(struct battery *b)
 	return 0;
 }
 
-static int battery_n810_current_charge(struct battery *b)
+static int battery_n810_charge_level(struct battery *b)
 {
 	struct battery_n810 *bn = container_of(b, struct battery_n810, battery);
 
@@ -58,16 +58,29 @@ static void battery_n810_destroy(struct battery *b)
 	free(bn);
 }
 
+static struct fileaccess * battery_n810_attr_open(int flags, const char *name)
+{
+	struct fileaccess *fd;
+
+	fd = sysfs_file_open(flags, "/devices/platform/n810bm/%s", name);
+	if (fd)
+		return fd;
+	fd = sysfs_file_open(flags, "/devices/platform/tahvo/tahvo-n810bm/%s", name);
+	if (fd)
+		return fd;
+	fd = sysfs_file_open(flags, "/devices/platform/retu/retu-n810bm/%s", name);
+	if (fd)
+		return fd;
+
+	return NULL;
+}
+
 struct battery * battery_n810_probe(void)
 {
 	struct fileaccess *level_file;
 	struct battery_n810 *bn;
 
-	level_file = sysfs_file_open(O_RDONLY, "/devices/platform/n810bm/battery_level");
-	if (!level_file)
-		level_file = sysfs_file_open(O_RDONLY, "/devices/platform/tahvo/tahvo-n810bm/battery_level");
-	if (!level_file)
-		level_file = sysfs_file_open(O_RDONLY, "/devices/platform/retu/retu-n810bm/battery_level");
+	level_file = battery_n810_attr_open(O_RDONLY, "battery_level");
 	if (!level_file)
 		goto error;
 
@@ -80,7 +93,7 @@ struct battery * battery_n810_probe(void)
 	battery_init(&bn->battery, "n810");
 	bn->battery.destroy = battery_n810_destroy;
 	bn->battery.update = battery_n810_update;
-	bn->battery.current_charge = battery_n810_current_charge;
+	bn->battery.charge_level = battery_n810_charge_level;
 	bn->battery.poll_interval = 10000;
 
 	return &bn->battery;

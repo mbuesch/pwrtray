@@ -23,6 +23,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
 
 
 static int default_on_ac(struct battery *b)
@@ -30,19 +31,44 @@ static int default_on_ac(struct battery *b)
 	return 0;
 }
 
-static int default_min_charge(struct battery *b)
+static int default_charger_enable(struct battery *b, int enable)
+{
+	return -ENODEV;
+}
+
+static int default_charging(struct battery *b)
 {
 	return 0;
 }
 
-static int default_max_charge(struct battery *b)
+static int default_min_level(struct battery *b)
+{
+	return 0;
+}
+
+static int default_max_level(struct battery *b)
 {
 	return 100;
 }
 
-static int default_current_charge(struct battery *b)
+static int default_charge_level(struct battery *b)
 {
 	return 0;
+}
+
+static int default_capacity_mAh(struct battery *b)
+{
+	return -ENODEV;
+}
+
+static int default_current_mA(struct battery *b)
+{
+	return -ENODEV;
+}
+
+static int default_temperature_K(struct battery *b)
+{
+	return -ENODEV;
 }
 
 static void battery_poll_callback(struct sleeptimer *timer)
@@ -59,9 +85,14 @@ void battery_init(struct battery *b, const char *name)
 	memset(b, 0, sizeof(*b));
 	b->name = name;
 	b->on_ac = default_on_ac;
-	b->min_charge = default_min_charge;
-	b->max_charge = default_max_charge;
-	b->current_charge = default_current_charge;
+	b->charger_enable = default_charger_enable;
+	b->charging = default_charging;
+	b->min_level = default_min_level;
+	b->max_level = default_max_level;
+	b->charge_level = default_charge_level;
+	b->capacity_mAh = default_capacity_mAh;
+	b->current_mA = default_current_mA;
+	b->temperature_K = default_temperature_K;
 }
 
 static void battery_start(struct battery *b)
@@ -112,9 +143,9 @@ int battery_fill_pt_message_stat(struct battery *b, struct pt_message *msg)
 	msg->bat_stat.flags = 0;
 	if (b->on_ac(b))
 		msg->bat_stat.flags |= htonl(PT_BAT_FLG_ONAC);
-	msg->bat_stat.min_charge = htonl(b->min_charge(b));
-	msg->bat_stat.max_charge = htonl(b->max_charge(b));
-	msg->bat_stat.charge = htonl(b->current_charge(b));
+	msg->bat_stat.min_level = htonl(b->min_level(b));
+	msg->bat_stat.max_level = htonl(b->max_level(b));
+	msg->bat_stat.level = htonl(b->charge_level(b));
 
 	return 0;
 }

@@ -119,14 +119,14 @@ static int battery_powerbook_on_ac(struct battery *b)
 	return bp->on_ac;
 }
 
-static int battery_powerbook_max_charge(struct battery *b)
+static int battery_powerbook_max_level(struct battery *b)
 {
 	struct battery_powerbook *bp = container_of(b, struct battery_powerbook, battery);
 
 	return bp->max_charge;
 }
 
-static int battery_powerbook_current_charge(struct battery *b)
+static int battery_powerbook_charge_level(struct battery *b)
 {
 	struct battery_powerbook *bp = container_of(b, struct battery_powerbook, battery);
 
@@ -164,8 +164,8 @@ struct battery * battery_powerbook_probe(void)
 	bp->battery.destroy = battery_powerbook_destroy;
 	bp->battery.update = battery_powerbook_update;
 	bp->battery.on_ac = battery_powerbook_on_ac;
-	bp->battery.max_charge = battery_powerbook_max_charge;
-	bp->battery.current_charge = battery_powerbook_current_charge;
+	bp->battery.max_level = battery_powerbook_max_level;
+	bp->battery.charge_level = battery_powerbook_charge_level;
 	bp->battery.poll_interval = 1000;
 
 	return &bp->battery;
