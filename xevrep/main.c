@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 	Display *display;
 	Window window;
 	XIEventMask evmask;
-	unsigned char evmask_bits[1] = { 0, };
+	unsigned char evmask_bits[(XI_LASTEVENT + 8) / 8] = { 0, };
 	int res, tmp0, tmp1, xi_opcode;
 	int pid;
 	sigset_t sigset;
@@ -141,9 +141,14 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	XISetMask(evmask_bits, XI_DeviceChanged);
 	XISetMask(evmask_bits, XI_KeyPress);
-	XISetMask(evmask_bits, XI_ButtonPress);
+	XISetMask(evmask_bits, XI_KeyRelease);
+	XISetMask(evmask_bits, XI_RawButtonPress);
+	XISetMask(evmask_bits, XI_RawButtonRelease);
 	XISetMask(evmask_bits, XI_Motion);
+	XISetMask(evmask_bits, XI_HierarchyChanged);
+	XISetMask(evmask_bits, XI_PropertyEvent);
 	memset(&evmask, 0, sizeof(evmask));
 	evmask.deviceid = XIAllDevices;
 	evmask.mask_len = sizeof(evmask_bits);
