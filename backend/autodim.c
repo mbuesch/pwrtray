@@ -27,9 +27,6 @@
 #include <assert.h>
 
 
-#define AUTODIM_TIMER_INTERVAL	1000
-
-
 static void autodim_set_backlight(struct autodim *ad, unsigned int percent)
 {
 	struct battery *battery = backend.battery;
@@ -54,13 +51,11 @@ static void autodim_handle_state(struct autodim *ad)
 {
 	struct autodim_step *step;
 
-	assert(ad->state < ad->nr_steps);
-	step = &ad->steps[ad->state];
+	if (ad->state < ad->nr_steps) {
+		step = &ad->steps[ad->state];
+		ad->state++;
 
-	if (ad->idle_seconds >= step->second) {
 		autodim_set_backlight(ad, step->percent);
-		if (ad->state + 1 < ad->nr_steps)
-			ad->state++;
 	}
 }
 
@@ -71,7 +66,16 @@ static void autodim_timer_stop(struct autodim *ad)
 
 static void autodim_timer_start(struct autodim *ad)
 {
-	sleeptimer_set_timeout_relative(&ad->timer, AUTODIM_TIMER_INTERVAL);
+	unsigned int sec;
+
+	if (ad->state == 0)
+		sec = ad->steps[0].second;
+	else if (ad->state < ad->nr_steps)
+		sec = ad->steps[ad->state].second - ad->steps[ad->state - 1].second;
+	else
+		return;
+
+	sleeptimer_set_timeout_relative(&ad->timer, sec * 1000);
 	sleeptimer_enqueue(&ad->timer);
 }
 
@@ -79,10 +83,7 @@ static void autodim_timer_callback(struct sleeptimer *timer)
 {
 	struct autodim *ad = container_of(timer, struct autodim, timer);
 
-	if (ad->idle_seconds < 0xFFFFFFFF) {
-		ad->idle_seconds++;
-		autodim_handle_state(ad);
-	}
+	autodim_handle_state(ad);
 	autodim_timer_start(ad);
 }
 
@@ -294,7 +295,7 @@ void autodim_set_max_percent(struct autodim *ad, int max_percent)
 void autodim_handle_input_event(struct autodim *ad)
 {
 	logverbose("Autodim: Got input event.\n");
-	ad->idle_seconds = 0;
 	ad->state = 0;
+	autodim_timer_start(ad);
 	autodim_set_backlight(ad, ad->max_percent);
 }

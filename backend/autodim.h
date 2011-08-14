@@ -18,7 +18,6 @@ struct autodim {
 	struct sleeptimer timer;
 
 	int suspended;
-	unsigned int idle_seconds;
 	unsigned int state;
 	unsigned int bl_percent;
 	unsigned int max_percent;
