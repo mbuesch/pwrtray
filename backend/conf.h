@@ -1,7 +1,11 @@
 #ifndef CONFIG_FILE_H_
 #define CONFIG_FILE_H_
 
-#include "list.h"
+
+#define CONF_HASHTAB_BITS	5
+#define CONF_HASHTAB_SIZE	(1 << CONF_HASHTAB_BITS)
+#define CONF_HASHTAB_MASK	(CONF_HASHTAB_SIZE - 1)
+
 
 struct config_item;
 struct config_section;
@@ -12,19 +16,20 @@ struct config_item {
 	char *name;
 	char *value;
 
-	struct list_head list;
+	struct config_item *next;
 };
 
 struct config_section {
 	struct config_file *file;
 	char *name;
-	struct list_head items;
 
-	struct list_head list;
+	struct config_item *item_hashtab[CONF_HASHTAB_SIZE];
+
+	struct config_section *next;
 };
 
 struct config_file {
-	struct list_head sections;
+	struct config_section *section_hashtab[CONF_HASHTAB_SIZE];
 };
 
 const char * config_get(struct config_file *f,

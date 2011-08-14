@@ -61,3 +61,13 @@ char * string_strip(char *str)
 
 	return start;
 }
+
+uint_fast8_t tiny_hash(const char *str)
+{
+	uint8_t c, hash = 21;
+
+	while ((c = *str++) != '\0')
+		hash = ((hash << 3) + hash) + c;
+
+	return hash;
+}

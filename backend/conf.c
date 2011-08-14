@@ -23,26 +23,32 @@
 #include <errno.h>
 
 
-static void free_item(struct config_item *i)
+static inline uint_fast8_t conf_hash(const char *str)
 {
-	if (i) {
-		free(i->name);
-		free(i->value);
-		free(i);
-	}
+	return tiny_hash(str) & CONF_HASHTAB_MASK;
 }
 
-static void free_section(struct config_section *s)
-{
-	struct config_item *i, *i_tmp;
+#define hashtab_add(tab, element)					\
+	do {								\
+		unsigned int _hash = conf_hash((element)->name);	\
+		typeof(*(element)) *a, *b;				\
+		(element)->next = NULL;					\
+		if (tab[_hash]) {					\
+			b = tab[_hash];					\
+			for (; b; a = b, b = b->next);			\
+			a->next = (element);				\
+		} else							\
+			tab[_hash] = (element);				\
+	} while (0)
 
-	if (s) {
-		list_for_each_entry_safe(i, i_tmp, &s->items, list)
-			free_item(i);
-		free(s->name);
-		free(s);
-	}
-}
+#define hashtab_get(tab, element_name)					\
+	({								\
+		typeof(*(tab[0])) *_e;					\
+		for (_e = tab[conf_hash(element_name)];			\
+		     _e && strcmp(_e->name, (element_name)) != 0;	\
+		     _e = _e->next);					\
+		_e;							\
+	})
 
 const char * config_get(struct config_file *f,
 			const char *section,
@@ -51,23 +57,18 @@ const char * config_get(struct config_file *f,
 {
 	struct config_section *s;
 	struct config_item *i;
-	const char *retval = _default;
 
 	if (!f || !section || !item)
 		return _default;
-	list_for_each_entry(s, &f->sections, list) {
-		if (strcmp(s->name, section) == 0) {
-			list_for_each_entry(i, &s->items, list) {
-				if (strcmp(i->name, item) == 0) {
-					retval = i->value;
-					break;
-				}
-			}
-			break;
-		}
+
+	s = hashtab_get(f->section_hashtab, section);
+	if (s) {
+		i = hashtab_get(s->item_hashtab, item);
+		if (i)
+			return i->value;
 	}
 
-	return retval;
+	return _default;
 }
 
 static int string_to_int(const char *string, int *i)
@@ -125,6 +126,35 @@ int config_get_bool(struct config_file *f,
 	return !!i;
 }
 
+static void dump_config_tree(struct config_file *f)
+{
+	struct config_section *s;
+	struct config_item *i;
+	unsigned int j, k;
+	int sect_coll, item_coll;
+	const char *collstr = "\t\t<== ### COLLISION ###";
+
+	logverbose("Parsed config file:\n");
+	for (j = 0; j < CONF_HASHTAB_SIZE; j++) {
+		sect_coll = 0;
+		for (s = f->section_hashtab[j]; s; s = s->next) {
+			logverbose("\t[%02X] Section '%s'%s\n",
+				   j & 0xFF, s->name,
+				   sect_coll ? collstr : "");
+			for (k = 0; k < CONF_HASHTAB_SIZE; k++) {
+				item_coll = 0;
+				for (i = s->item_hashtab[k]; i; i = i->next) {
+					logverbose("\t\t[%02X] Item '%s'%s\n",
+						   k & 0xFF, i->name,
+						   item_coll ? collstr : "");
+					item_coll = 1;
+				}
+			}
+			sect_coll = 1;
+		}
+	}
+}
+
 struct config_file * config_file_parse(const char *path)
 {
 	struct config_file *retval = NULL, *c;
@@ -141,7 +171,6 @@ struct config_file * config_file_parse(const char *path)
 	c = zalloc(sizeof(*c));
 	if (!c)
 		goto out_error;
-	INIT_LIST_HEAD(&c->sections);
 
 	fa = file_open(O_RDONLY, path);
 	if (!fa)
@@ -167,15 +196,13 @@ struct config_file * config_file_parse(const char *path)
 			if (!s)
 				goto error_unwind;
 			s->file = c;
-			INIT_LIST_HEAD(&s->items);
-			INIT_LIST_HEAD(&s->list);
 			line[len - 1] = '\0';
 			s->name = strdup(line + 1);
 			if (!s->name) {
 				free(s);
 				goto error_unwind;
 			}
-			list_add_tail(&s->list, &c->sections);
+			hashtab_add(c->section_hashtab, s);
 			continue;
 		}
 		if (!s) {
@@ -195,7 +222,6 @@ struct config_file * config_file_parse(const char *path)
 		if (!i)
 			goto error_unwind;
 		i->section = s;
-		INIT_LIST_HEAD(&i->list);
 		i->name = strdup(name);
 		if (!i->name) {
 			free(i);
@@ -207,10 +233,12 @@ struct config_file * config_file_parse(const char *path)
 			free(i);
 			goto error_unwind;
 		}
-		list_add_tail(&i->list, &s->items);
+		hashtab_add(s->item_hashtab, i);
 	}
 out_ok:
 	retval = c;
+	if (loglevel_is_verbose())
+		dump_config_tree(retval);
 
 out_error:
 	text_lines_free(&lines);
@@ -223,13 +251,44 @@ error_unwind:
 	goto out_error;
 }
 
+static void free_item(struct config_item *i)
+{
+	if (i) {
+		free(i->name);
+		free(i->value);
+		free(i);
+	}
+}
+
+static void free_section(struct config_section *s)
+{
+	unsigned int i;
+	struct config_item *it, *next;
+
+	if (s) {
+		for (i = 0; i < CONF_HASHTAB_SIZE; i++) {
+			for (it = s->item_hashtab[i]; it; it = next) {
+				next = it->next;
+				free_item(it);
+			}
+		}
+		free(s->name);
+		free(s);
+	}
+}
+
 void config_file_free(struct config_file *f)
 {
-	struct config_section *s, *s_tmp;
+	unsigned int i;
+	struct config_section *s, *next;
 
 	if (f) {
-		list_for_each_entry_safe(s, s_tmp, &f->sections, list)
-			free_section(s);
+		for (i = 0; i < CONF_HASHTAB_SIZE; i++) {
+			for (s = f->section_hashtab[i]; s; s = next) {
+				next = s->next;
+				free_section(s);
+			}
+		}
 		free(f);
 	}
 }

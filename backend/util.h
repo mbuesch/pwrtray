@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "list.h"
 
@@ -24,5 +25,7 @@ static inline void * zalloc(size_t size)
 {
 	return calloc(1, size);
 }
+
+uint_fast8_t tiny_hash(const char *str);
 
 #endif /* BACKEND_UTIL_H_ */
