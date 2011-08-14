@@ -112,6 +112,8 @@ int config_get_bool(struct config_file *f,
 	value = config_get(f, section, item, NULL);
 	if (!value)
 		return _default;
+	if (!string_to_int(value, &i))
+		return !!i;
 	if (strcasecmp(value, "yes") == 0 ||
 	    strcasecmp(value, "true") == 0 ||
 	    strcasecmp(value, "on") == 0)
@@ -120,10 +122,8 @@ int config_get_bool(struct config_file *f,
 	    strcasecmp(value, "false") == 0 ||
 	    strcasecmp(value, "off") == 0)
 		return 0;
-	if (string_to_int(value, &i))
-		return _default;
 
-	return !!i;
+	return _default;
 }
 
 static void dump_config_tree(struct config_file *f)
