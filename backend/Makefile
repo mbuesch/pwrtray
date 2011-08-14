@@ -2,7 +2,7 @@ CC		?= gcc
 STRIP		?= strip
 INSTALL		?= install
 
-CFLAGS		?= -Os -Wall
+CFLAGS		+= -Os -Wall
 LDFLAGS		?=
 LIBS		?= -lrt
 DESTDIR		?=

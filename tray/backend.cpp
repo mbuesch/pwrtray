@@ -266,4 +266,4 @@ int Backend::setBacklightAutodim(bool enable, int max_percent)
 	return sendMessageSyncReply(&msg);
 }
 
-#include "backend.moc"
+#include "moc/backend.moc"

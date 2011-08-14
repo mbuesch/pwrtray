@@ -3,8 +3,7 @@ MOC		?= moc-qt4
 STRIP		?= strip
 INSTALL		?= install
 
-CXXFLAGS	?= -Os -Wall -fno-exceptions \
-		   -I./moc \
+CXXFLAGS	+= -Os -Wall -fno-exceptions \
 		   -I/usr/include \
 		   -I/usr/include/QtCore \
 		   -I/usr/include/QtGui \
@@ -47,11 +46,11 @@ $(call OBJS,$(SRCS)): obj/%.o:
 	@mkdir -p $(dir $@)
 	$(QUIET_CXX) -o $@ -c $(CXXFLAGS) $<
 
-all: $(BIN)
+moc/%.moc: %.h
+	@mkdir -p $(dir $@)
+	$(QUIET_MOC) -o $@ $<
 
-%.moc: %.h
-	@mkdir -p $(dir $@)/moc
-	$(QUIET_MOC) -o $(dir $@)/moc/$@ $<
+all: $(BIN)
 
 $(BIN): $(call OBJS,$(SRCS))
 	$(QUIET_CXX) $(CXXFLAGS) -o $(BIN) $(LDFLAGS) $(LIBS) $(call OBJS,$(SRCS))
