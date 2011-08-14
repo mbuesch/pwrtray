@@ -32,7 +32,17 @@
 
 static void autodim_set_backlight(struct autodim *ad, unsigned int percent)
 {
+	struct battery *battery = backend.battery;
+
+	if (battery && battery->on_ac(battery)) {
+		if (config_get_bool(backend.config, "BACKLIGHT",
+				    "autodim_max_on_ac", 0)) {
+			percent = ad->max_percent;
+		}
+	}
+
 	percent = min(percent, ad->max_percent);
+
 	if (percent != ad->bl_percent) {
 		ad->bl_percent = percent;
 		backlight_set_percentage(ad->bl, percent);
