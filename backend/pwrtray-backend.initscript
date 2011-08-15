@@ -9,25 +9,29 @@
 # Description:       Tiny power control daemon
 ### END INIT INFO
 
-PIDFILE="/run/pwrtray-backend.pid"
-
 export PATH="/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+NAME=pwrtray-backend
+DAEMON="$(which $NAME)"
+PIDFILE="/run/pwrtray/pwrtray-backend.pid"
+DESC="tiny power control daemon"
+
+. /lib/lsb/init-functions
 
 case "$1" in
 	start)
-		pwrtray-backend -B -P "$PIDFILE" && {
-			echo "Service pwrtray-backend started."
-		} || {
-			echo "Failed to start pwrtray-backend."
-		}
+		log_begin_msg "Starting $DESC: $NAME"
+		start-stop-daemon --start --quiet --pidfile $PIDFILE \
+			--oknodo --exec "$DAEMON" -- \
+			-B -P $PIDFILE
+		log_end_msg $?
 		;;
 	stop)
-		[ -r "$PIDFILE" ] && {
-			kill `cat $PIDFILE`
-			echo "Service pwrtray-backend stopped."
-		} || {
-			echo "Service pwrtray-backend is not running."
-		}
+		log_begin_msg "Stopping $DESC: $NAME"
+		start-stop-daemon --stop --quiet --pidfile $PIDFILE \
+			--name "$NAME"
+		RES=$?
+		rm -f $PIDFILE
+		log_end_msg $RES
 		;;
 	restart|reload|force-reload)
 		$0 stop
