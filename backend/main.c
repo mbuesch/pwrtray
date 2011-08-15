@@ -46,6 +46,7 @@ struct client {
 };
 
 static int socket_fd = -1;
+static sig_atomic_t in_signal;
 static int sig_block_count;
 static LIST_HEAD(client_list);
 
@@ -427,40 +428,76 @@ static void shutdown_cleanup(void)
 	unblock_signals();
 }
 
+static inline void enter_signal(void)
+{
+	in_signal = 1;
+	compiler_barrier();
+}
+
+static inline void leave_signal(void)
+{
+	compiler_barrier();
+	in_signal = 0;
+}
+
 static void signal_terminate(int signal)
 {
+	enter_signal();
+
 	loginfo("Terminating signal received.\n");
 	shutdown_cleanup();
+
+	leave_signal();
 	exit(1);
 }
 
 static void signal_pipe(int signal)
 {
+	enter_signal();
+
 	logerr("Broken pipe.\n");
+
+	leave_signal();
 }
 
 static void signal_async_io(int signal)
 {
+	enter_signal();
+
 	socket_accept(socket_fd);
 	recv_clients();
+
+	leave_signal();
 }
 
 static void signal_input_event_1(int signal)
 {
+	enter_signal();
+
 	if (backend.autodim)
 		autodim_handle_input_event(backend.autodim);
+
+	leave_signal();
 }
 
 static void signal_input_event_2(int signal)
 {
+	enter_signal();
+
 	if (backend.devicelock)
 		backend.devicelock->event(backend.devicelock);
+
+	leave_signal();
 }
 
 static void signal_child(int signal)
 {
+	enter_signal();
+
 	x11lock_sigchld(&backend.x11lock, 0);
 	xevrep_sigchld(&backend.xevrep, 0);
+
+	leave_signal();
 }
 
 #define sigset_set_blocked_sigs(setp) do {	\
@@ -478,24 +515,34 @@ void block_signals(void)
 {
 	sigset_t set;
 
-	assert(sig_block_count >= 0);
-	if (sig_block_count++ == 0) {
-		sigset_set_blocked_sigs(&set);
-		if (sigprocmask(SIG_BLOCK, &set, NULL))
-			logerr("Failed to block signals: %s\n", strerror(errno));
+	if (!in_signal) {
+		assert(sig_block_count >= 0);
+		if (sig_block_count++ == 0) {
+			sigset_set_blocked_sigs(&set);
+			if (sigprocmask(SIG_BLOCK, &set, NULL)) {
+				logerr("Failed to block signals: %s\n",
+				       strerror(errno));
+			}
+		}
 	}
+	compiler_barrier();
 }
 
 void unblock_signals(void)
 {
 	sigset_t set;
 
-	if (--sig_block_count == 0) {
-		sigset_set_blocked_sigs(&set);
-		if (sigprocmask(SIG_UNBLOCK, &set, NULL))
-			logerr("Failed to unblock signals: %s\n", strerror(errno));
+	compiler_barrier();
+	if (!in_signal) {
+		if (--sig_block_count == 0) {
+			sigset_set_blocked_sigs(&set);
+			if (sigprocmask(SIG_UNBLOCK, &set, NULL)) {
+				logerr("Failed to unblock signals: %s\n",
+				       strerror(errno));
+			}
+		}
+		assert(sig_block_count >= 0);
 	}
-	assert(sig_block_count >= 0);
 }
 
 static int install_sighandler(int signal, void (*handler)(int))

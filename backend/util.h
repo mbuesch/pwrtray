@@ -18,6 +18,8 @@
 
 #define ARRAY_SIZE(x)		(sizeof(x) / sizeof((x)[0]))
 
+#define compiler_barrier()	__asm__ __volatile__("" : : : "memory")
+
 void msleep(unsigned int msecs);
 char * string_strip(char *str);
 
