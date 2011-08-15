@@ -1,5 +1,4 @@
 CC		?= gcc
-STRIP		?= strip
 INSTALL		?= install
 
 CFLAGS		+= -Os -Wall
@@ -11,6 +10,7 @@ PREFIX		?= /usr/local
 CFLAGS		+= -DPREFIX=$(PREFIX) -D_GNU_SOURCE
 CFLAGS          += $(if $(filter 1 y,$(FEATURE_XLOCK)),-DFEATURE_XLOCK=1)
 CFLAGS          += $(if $(filter 1 y,$(FEATURE_XEVREP)),-DFEATURE_XEVREP=1)
+CFLAGS		+= $(if $(filter 1 y,$(PROFILE)),-pg)
 
 BIN		= pwrtray-backend
 BATT_SRCS	= battery.c battery_dummy.c battery_acpi.c battery_powerbook.c battery_n810.c
@@ -24,7 +24,6 @@ V		= @             # Verbose build:  make V=1
 Q		= $(V:1=)
 QUIET_CC	= $(Q:@=@echo '     CC       '$@;)$(CC)
 QUIET_DEPEND	= $(Q:@=@echo '     DEPEND   '$@;)$(CC)
-QUIET_STRIP	= $(Q:@=@echo '     STRIP    '$@;)$(STRIP)
 
 DEPS		= $(patsubst %.c,dep/%.d,$(1))
 OBJS		= $(patsubst %.c,obj/%.o,$(1))
@@ -49,7 +48,6 @@ all: $(BIN)
 
 $(BIN): $(call OBJS,$(SRCS))
 	$(QUIET_CC) $(CFLAGS) -o $(BIN) $(LDFLAGS) $(LIBS) $(call OBJS,$(SRCS))
-	$(QUIET_STRIP) $(BIN)
 
 clean:
 	rm -Rf dep obj core *~ $(BIN)
