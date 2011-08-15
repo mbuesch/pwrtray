@@ -75,6 +75,7 @@ static void autodim_timer_start(struct autodim *ad)
 	else
 		return;
 
+	logverbose("autodim: Next event in %u sec\n", sec);
 	sleeptimer_set_timeout_relative(&ad->timer, sec * 1000);
 	sleeptimer_enqueue(&ad->timer);
 }
@@ -83,6 +84,7 @@ static void autodim_timer_callback(struct sleeptimer *timer)
 {
 	struct autodim *ad = container_of(timer, struct autodim, timer);
 
+	logverbose("autodim: timer triggered\n");
 	autodim_handle_state(ad);
 	autodim_timer_start(ad);
 }
@@ -210,7 +212,7 @@ int autodim_init(struct autodim *ad, struct backlight *bl,
 	if (err)
 		goto err_free_fds;
 
-	sleeptimer_init(&ad->timer, autodim_timer_callback);
+	sleeptimer_init(&ad->timer, "autodim", autodim_timer_callback);
 	autodim_timer_start(ad);
 
 	logdebug("Auto-dimming enabled\n");

@@ -570,7 +570,7 @@ int mainloop(void)
 			logdebug("Mainloop: sleeptimer_wait_next() failed with %d (%s)\n",
 				 err, strerror(-err));
 		}
-		msleep(100);
+		msleep(1000);
 	}
 
 error:

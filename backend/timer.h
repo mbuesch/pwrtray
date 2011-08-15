@@ -14,8 +14,8 @@ struct sleeptimer;
 
 typedef void (*sleeptimer_callback_t)(struct sleeptimer *timer);
 
-struct sleeptimer
-{
+struct sleeptimer {
+	const char *name;
 	struct timespec timeout;
 	sleeptimer_callback_t callback;
 	unsigned int id;
@@ -23,6 +23,7 @@ struct sleeptimer
 };
 
 void sleeptimer_init(struct sleeptimer *timer,
+		     const char *name,
 		     sleeptimer_callback_t callback);
 void sleeptimer_set_timeout_relative(struct sleeptimer *timer,
 				     unsigned int msecs);

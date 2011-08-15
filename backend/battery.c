@@ -99,7 +99,7 @@ static void battery_start(struct battery *b)
 {
 	if (b->poll_interval) {
 		b->update(b);
-		sleeptimer_init(&b->timer, battery_poll_callback);
+		sleeptimer_init(&b->timer, "battery", battery_poll_callback);
 		sleeptimer_set_timeout_relative(&b->timer, b->poll_interval);
 		sleeptimer_enqueue(&b->timer);
 	}

@@ -120,11 +120,14 @@ static inline int timespec_after(const struct timespec *a, const struct timespec
 }
 
 void sleeptimer_init(struct sleeptimer *timer,
+		     const char *name,
 		     sleeptimer_callback_t callback)
 {
 	memset(timer, 0, sizeof(*timer));
+	timer->name = name;
 	timer->callback = callback;
 	INIT_LIST_HEAD(&timer->list);
+	logverbose("timer: %s registered\n", name);
 }
 
 void sleeptimer_set_timeout_relative(struct sleeptimer *timer,
