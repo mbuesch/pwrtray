@@ -129,6 +129,7 @@ void TrayWindow::updateBattBar(struct pt_message *msg)
 	int err;
 	unsigned int minval, maxval, curval;
 	unsigned int range, percent;
+	const char *battText;
 
 	if (!msg) {
 		err = tray->getBackend()->getBatteryState(&m);
@@ -147,24 +148,24 @@ void TrayWindow::updateBattBar(struct pt_message *msg)
 		minval = 0;
 		maxval = 1;
 		curval = 0;
-		battLabel->setText("No batt info");
+		battText = "No bat. info";
 	} else {
 		if (msg->bat_stat.flags & htonl(PT_BAT_FLG_ONAC))
-			battLabel->setText("Batt (AC):");
+			battText = "Bat. (AC):";
 		else
-			battLabel->setText("Batt:");
+			battText = "Bat.:";
 	}
 	battBar->setMinimum(minval);
 	battBar->setMaximum(maxval);
 	battBar->setValue(curval);
+	battLabel->setText(battText);
 
 	range = maxval - minval;
 	if (range)
 		percent = (curval - minval) * 100 / range;
 	else
 		percent = 0;
-	tray->setBatteryToolTip(battLabel->text() +
-				QString(" %1%").arg(percent));
+	tray->setBatteryToolTip(QString("%1 %2%").arg(battText).arg(percent));
 }
 
 void TrayWindow::updateBacklightSlider(struct pt_message *msg)
@@ -279,20 +280,17 @@ void TrayIcon::updateToolTip()
 
 void TrayIcon::wasActivated(ActivationReason reason)
 {
-	window->update();
 	window->show();
 }
 
 void TrayIcon::batteryStateChanged(struct pt_message *msg)
 {
-	if (window->isVisible())
-		window->updateBattBar(msg);
+	window->updateBattBar(msg);
 }
 
 void TrayIcon::backlightStateChanged(struct pt_message *msg)
 {
-	if (window->isVisible())
-		window->updateBacklightSlider(msg);
+	window->updateBacklightSlider(msg);
 }
 
 static void msleep(unsigned int msecs)
