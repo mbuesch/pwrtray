@@ -484,8 +484,7 @@ static void signal_input_event_2(int signal)
 {
 	enter_signal();
 
-	if (backend.devicelock)
-		backend.devicelock->event(backend.devicelock);
+	backend.devicelock->event(backend.devicelock);
 
 	leave_signal();
 }
@@ -594,8 +593,9 @@ int mainloop(void)
 		if (enable_autodim(value))
 			logerr("Failed to initially enable autodimming\n");
 	}
-	if (backend.backlight->screen_is_locked(backend.backlight) != -EOPNOTSUPP)
-		backend.devicelock = devicelock_probe();
+	backend.devicelock = devicelock_probe();
+	if (!backend.devicelock)
+		goto error;
 	err = create_socket();
 	if (err)
 		goto error;

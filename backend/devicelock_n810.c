@@ -156,6 +156,7 @@ static struct devicelock * devicelock_n810_probe(void)
 	sn->ts_disable_file = ts_disable;
 	sn->kb_disable_file = kb_disable;
 
+	devicelock_init(&sn->devicelock, "n810");
 	sn->devicelock.event = devicelock_n810_event;
 	sn->devicelock.destroy = devicelock_n810_destroy;
 

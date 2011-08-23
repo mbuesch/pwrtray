@@ -27,9 +27,10 @@ BL_MODULES	:=		\
 	backlight_class.c	\
 	backlight_dummy.c
 
-# Device lock modules.
+# Device lock modules. devicelock_dummy.c must be last.
 DLOCK_MODULES	:=		\
-	devicelock_n810.c
+	devicelock_n810.c	\
+	devicelock_dummy.c
 
 SRCS		:= main.c timer.c log.c args.c conf.c util.c fileaccess.c \
 		  autodim.c x11lock.c xevrep.c \

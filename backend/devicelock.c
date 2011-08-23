@@ -16,6 +16,10 @@
 #include "log.h"
 
 
+static void default_event(struct devicelock *s)
+{
+}
+
 struct devicelock * devicelock_probe(void)
 {
 	struct devicelock *s;
@@ -24,10 +28,14 @@ struct devicelock * devicelock_probe(void)
 	for_each_probe(probe, devicelock) {
 		logverbose("devicelock: Probing %p\n", probe);
 		s = probe->func();
-		if (s)
+		if (s) {
+			logdebug("Initialized devicelock driver \"%s\"\n",
+				 s->name);
 			return s;
+		}
 	}
 
+	logerr("Failed to find any devicelock controls.\n");
 	return NULL;
 }
 
@@ -35,4 +43,11 @@ void devicelock_destroy(struct devicelock *s)
 {
 	if (s)
 		s->destroy(s);
+}
+
+void devicelock_init(struct devicelock *s, const char *name)
+{
+	memset(s, 0, sizeof(*s));
+	s->name = name;
+	s->event = default_event;
 }
