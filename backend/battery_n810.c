@@ -75,7 +75,7 @@ static struct fileaccess * battery_n810_attr_open(int flags, const char *name)
 	return NULL;
 }
 
-struct battery * battery_n810_probe(void)
+static struct battery * battery_n810_probe(void)
 {
 	struct fileaccess *level_file;
 	struct battery_n810 *bn;
@@ -103,3 +103,5 @@ err_close:
 error:
 	return NULL;
 }
+
+BATTERY_PROBE(n810, battery_n810_probe);

@@ -14,6 +14,4 @@ struct battery_powerbook {
 	int charge;
 };
 
-struct battery * battery_powerbook_probe(void);
-
 #endif /* BACKEND_BATTERY_POWERBOOK_H_ */

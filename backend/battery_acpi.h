@@ -18,6 +18,4 @@ struct battery_acpi {
 	char charge_now_filename[NAME_MAX + 1];
 };
 
-struct battery * battery_acpi_probe(void);
-
 #endif /* BACKEND_BATTERY_ACPI_H_ */

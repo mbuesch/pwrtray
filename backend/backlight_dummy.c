@@ -28,7 +28,7 @@ static void backlight_dummy_destroy(struct backlight *b)
 	free(bd);
 }
 
-struct backlight * backlight_dummy_probe(void)
+static struct backlight * backlight_dummy_probe(void)
 {
 	struct backlight_dummy *bd;
 
@@ -42,3 +42,5 @@ struct backlight * backlight_dummy_probe(void)
 
 	return &bd->backlight;
 }
+
+BACKLIGHT_PROBE(dummy, backlight_dummy_probe);

@@ -28,7 +28,7 @@ static void battery_dummy_destroy(struct battery *b)
 	free(bd);
 }
 
-struct battery * battery_dummy_probe(void)
+static struct battery * battery_dummy_probe(void)
 {
 	struct battery_dummy *bd;
 
@@ -42,3 +42,5 @@ struct battery * battery_dummy_probe(void)
 
 	return &bd->battery;
 }
+
+BATTERY_PROBE(dummy, battery_dummy_probe);

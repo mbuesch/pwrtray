@@ -12,13 +12,30 @@ CFLAGS          += $(if $(filter 1 y,$(FEATURE_XLOCK)),-DFEATURE_XLOCK=1)
 CFLAGS          += $(if $(filter 1 y,$(FEATURE_XEVREP)),-DFEATURE_XEVREP=1)
 CFLAGS		+= $(if $(filter 1 y,$(PROFILE)),-pg)
 
-BIN		= pwrtray-backend
-BATT_SRCS	= battery.c battery_dummy.c battery_acpi.c battery_powerbook.c battery_n810.c
-BL_SRCS		= backlight.c backlight_dummy.c backlight_class.c backlight_omapfb.c
-DL_SRCS		= devicelock.c devicelock_n810.c
-SRCS		= main.c timer.c log.c args.c conf.c util.c fileaccess.c \
+BIN		:= pwrtray-backend
+
+# Battery modules. battery_dummy.c must be last.
+BAT_MODULES	:=		\
+	battery_powerbook.c	\
+	battery_n810.c		\
+	battery_acpi.c		\
+	battery_dummy.c
+
+# Backlight modules. backlight_dummy.c must be last.
+BL_MODULES	:=		\
+	backlight_omapfb.c	\
+	backlight_class.c	\
+	backlight_dummy.c
+
+# Device lock modules.
+DLOCK_MODULES	:=		\
+	devicelock_n810.c
+
+SRCS		:= main.c timer.c log.c args.c conf.c util.c fileaccess.c \
 		  autodim.c x11lock.c xevrep.c \
-		  $(BATT_SRCS) $(BL_SRCS) $(DL_SRCS)
+		  battery.c $(BAT_MODULES) \
+		  backlight.c $(BL_MODULES) \
+		  devicelock.c $(DLOCK_MODULES)
 
 V		= @             # Verbose build:  make V=1
 Q		= $(V:1=)

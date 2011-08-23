@@ -15,6 +15,4 @@ struct devicelock_n810 {
 	struct fileaccess *ts_disable_file;
 };
 
-struct devicelock * devicelock_n810_probe(void);
-
 #endif /* BACKEND_DEVICELOCK_N810_H_ */

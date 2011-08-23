@@ -115,7 +115,7 @@ static void backlight_omapfb_destroy(struct backlight *b)
 	free(bo);
 }
 
-struct backlight * backlight_omapfb_probe(void)
+static struct backlight * backlight_omapfb_probe(void)
 {
 	struct backlight_omapfb *bo;
 	struct fileaccess *file, *level_file;
@@ -162,3 +162,5 @@ err_close:
 error:
 	return NULL;
 }
+
+BACKLIGHT_PROBE(omapfb, backlight_omapfb_probe);

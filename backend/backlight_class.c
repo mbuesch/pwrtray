@@ -81,7 +81,7 @@ static void backlight_class_destroy(struct backlight *b)
 	free(bc);
 }
 
-struct backlight * backlight_class_probe(void)
+static struct backlight * backlight_class_probe(void)
 {
 	struct backlight_class *bc;
 	struct fileaccess *file, *actual_br_file = NULL, *set_br_file = NULL;
@@ -141,3 +141,5 @@ err_files_close:
 
 	return NULL;
 }
+
+BACKLIGHT_PROBE(class, backlight_class_probe);

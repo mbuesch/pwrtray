@@ -7,6 +7,4 @@ struct battery_dummy {
 	struct battery battery;
 };
 
-struct battery * battery_dummy_probe(void);
-
 #endif /* BACKEND_BATTERY_DUMMY_H_ */

@@ -10,6 +10,4 @@ struct battery_n810 {
 	int charge;
 };
 
-struct battery * battery_n810_probe(void);
-
 #endif /* BACKEND_BATTERY_N810_H_ */

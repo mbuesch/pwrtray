@@ -18,10 +18,6 @@
 #include "x11lock.h"
 #include "util.h"
 
-#include "backlight_class.h"
-#include "backlight_omapfb.h"
-#include "backlight_dummy.h"
-
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
@@ -154,25 +150,21 @@ void backlight_init(struct backlight *b, const char *name)
 struct backlight * backlight_probe(void)
 {
 	struct backlight *b;
+	const struct probe *probe;
 
-	b = backlight_omapfb_probe();
-	if (b)
-		goto ok;
-	b = backlight_class_probe();
-	if (b)
-		goto ok;
-	b = backlight_dummy_probe();
-	if (b)
-		goto ok;
+	for_each_probe(probe, backlight) {
+		logverbose("backlight: Probing %p\n", probe);
+		b = probe->func();
+		if (b) {
+			fbblank_init(b);
+			logdebug("Initialized backlight driver \"%s\"\n",
+				 b->name);
+			return b;
+		}
+	}
 
 	logerr("Failed to find any backlight controls.\n");
 	return NULL;
-
-ok:
-	fbblank_init(b);
-	logdebug("Initialized backlight driver \"%s\"\n", b->name);
-
-	return b;
 }
 
 void backlight_destroy(struct backlight *b)

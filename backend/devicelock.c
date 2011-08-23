@@ -13,22 +13,22 @@
  */
 
 #include "devicelock.h"
-
-#include "devicelock_n810.h"
+#include "log.h"
 
 
 struct devicelock * devicelock_probe(void)
 {
 	struct devicelock *s;
+	const struct probe *probe;
 
-	s = devicelock_n810_probe();
-	if (s)
-		goto ok;
+	for_each_probe(probe, devicelock) {
+		logverbose("devicelock: Probing %p\n", probe);
+		s = probe->func();
+		if (s)
+			return s;
+	}
 
 	return NULL;
-
-ok:
-	return s;
 }
 
 void devicelock_destroy(struct devicelock *s)

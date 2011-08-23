@@ -20,6 +20,9 @@
 
 #define compiler_barrier()	__asm__ __volatile__("" : : : "memory")
 
+#define ALIGN(x)		__attribute__((__aligned__(x)))
+#define ALIGN_MAX		ALIGN(__BIGGEST_ALIGNMENT__)
+
 void msleep(unsigned int msecs);
 char * string_strip(char *str);
 

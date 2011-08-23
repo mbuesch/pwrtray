@@ -13,6 +13,4 @@ struct backlight_class {
 	int brightness;
 };
 
-struct backlight * backlight_class_probe(void);
-
 #endif /* BACKEND_BACKLIGHT_CLASS_H_ */

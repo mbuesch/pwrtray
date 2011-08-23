@@ -92,7 +92,7 @@ static void devicelock_n810_destroy(struct devicelock *s)
 	free(sn);
 }
 
-struct devicelock * devicelock_n810_probe(void)
+static struct devicelock * devicelock_n810_probe(void)
 {
 	struct devicelock_n810 *sn;
 	struct fileaccess *ts_disable = NULL;
@@ -171,3 +171,5 @@ err_close:
 	file_close(kb_disable);
 	return NULL;
 }
+
+DEVICELOCK_PROBE(n810, devicelock_n810_probe);

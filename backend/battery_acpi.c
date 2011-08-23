@@ -111,7 +111,7 @@ static void battery_acpi_destroy(struct battery *b)
 	free(ba);
 }
 
-struct battery * battery_acpi_probe(void)
+static struct battery * battery_acpi_probe(void)
 {
 	struct battery_acpi *ba;
 	LIST_HEAD(dentries);
@@ -173,3 +173,5 @@ struct battery * battery_acpi_probe(void)
 error:
 	return NULL;
 }
+
+BATTERY_PROBE(acpi, battery_acpi_probe);

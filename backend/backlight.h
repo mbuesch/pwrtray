@@ -2,6 +2,7 @@
 #define BACKEND_BACKLIGHT_H_
 
 #include "api.h"
+#include "probe.h"
 
 
 struct backlight {
@@ -34,5 +35,8 @@ int backlight_notify_state_change(struct backlight *b);
 int backlight_set_brightness(struct backlight *b, int value);
 int backlight_set_percentage(struct backlight *b, unsigned int percent);
 int backlight_screen_lock(struct backlight *b, int lock);
+
+DECLARE_PROBES(backlight);
+#define BACKLIGHT_PROBE(_name, _func)	DEFINE_PROBE(backlight, _name, _func)
 
 #endif /* BACKEND_BACKLIGHT_H_ */

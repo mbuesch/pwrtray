@@ -16,11 +16,6 @@
 #include "log.h"
 #include "main.h"
 
-#include "battery_powerbook.h"
-#include "battery_n810.h"
-#include "battery_dummy.h"
-#include "battery_acpi.h"
-
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -108,28 +103,21 @@ static void battery_start(struct battery *b)
 struct battery * battery_probe(void)
 {
 	struct battery *b;
+	const struct probe *probe;
 
-	b = battery_n810_probe();
-	if (b)
-		goto ok;
-	b = battery_powerbook_probe();
-	if (b)
-		goto ok;
-	b = battery_acpi_probe();
-	if (b)
-		goto ok;
-	b = battery_dummy_probe();
-	if (b)
-		goto ok;
+	for_each_probe(probe, battery) {
+		logverbose("battery: Probing %p\n", probe);
+		b = probe->func();
+		if (b) {
+			battery_start(b);
+			logdebug("Initialied battery driver \"%s\"\n",
+				 b->name);
+			return b;
+		}
+	}
 
 	logerr("Failed to find a battery\n");
 	return NULL;
-
-ok:
-	battery_start(b);
-	logdebug("Initialied battery driver \"%s\"\n", b->name);
-
-	return b;
 }
 
 void battery_destroy(struct battery *b)

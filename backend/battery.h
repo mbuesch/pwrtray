@@ -3,6 +3,7 @@
 
 #include "timer.h"
 #include "api.h"
+#include "probe.h"
 
 
 struct battery {
@@ -45,5 +46,8 @@ void battery_destroy(struct battery *b);
 
 int battery_fill_pt_message_stat(struct battery *b, struct pt_message *msg);
 int battery_notify_state_change(struct battery *b);
+
+DECLARE_PROBES(battery);
+#define BATTERY_PROBE(_name, _func)	DEFINE_PROBE(battery, _name, _func)
 
 #endif /* BACKEND_BATTERY_H_ */

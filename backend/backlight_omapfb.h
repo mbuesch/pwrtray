@@ -13,6 +13,4 @@ struct backlight_omapfb {
 	int locked;
 };
 
-struct backlight * backlight_omapfb_probe(void);
-
 #endif /* BACKEND_BACKLIGHT_OMAPFB_H_ */

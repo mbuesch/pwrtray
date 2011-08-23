@@ -143,7 +143,7 @@ static void battery_powerbook_destroy(struct battery *b)
 	free(bp);
 }
 
-struct battery * battery_powerbook_probe(void)
+static struct battery * battery_powerbook_probe(void)
 {
 	struct fileaccess *info, *stat;
 	struct battery_powerbook *bp;
@@ -175,3 +175,5 @@ err_close:
 	file_close(stat);
 	return NULL;
 }
+
+BATTERY_PROBE(powerbook, battery_powerbook_probe);
