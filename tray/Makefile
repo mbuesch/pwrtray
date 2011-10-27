@@ -3,16 +3,19 @@ MOC		?= moc-qt4
 STRIP		?= strip
 INSTALL		?= install
 
+QT_INCDIR	?= /usr/include
+QT_LIBDIR	?= /usr/lib
+
 CXXFLAGS	+= -Os -Wall -fno-exceptions \
-		   -I/usr/include \
-		   -I/usr/include/QtCore \
-		   -I/usr/include/QtGui \
-		   -I/usr/include/qt4 \
-		   -I/usr/include/qt4/QtCore \
-		   -I/usr/include/qt4/QtGui
+		   -I$(QT_INCDIR) \
+		   -I$(QT_INCDIR)/QtCore \
+		   -I$(QT_INCDIR)/QtGui \
+		   -I$(QT_INCDIR)/qt4 \
+		   -I$(QT_INCDIR)/qt4/QtCore \
+		   -I$(QT_INCDIR)/qt4/QtGui
 CXXFLAGS	+= -DNULL=0 -DPREFIX=$(PREFIX)
-LDFLAGS		?= -L/usr/lib \
-		  -L/usr/lib/qt4
+LDFLAGS		?= -L$(QT_LIBDIR) \
+		  -L$(QT_LIBDIR)/qt4
 LIBS		?= -lQtCore -lQtGui
 DESTDIR		?=
 PREFIX		?= /usr/local
