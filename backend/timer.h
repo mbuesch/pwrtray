@@ -31,6 +31,7 @@ void sleeptimer_set_timeout_relative(struct sleeptimer *timer,
 void sleeptimer_enqueue(struct sleeptimer *timer);
 void sleeptimer_dequeue(struct sleeptimer *timer);
 
+int sleeptimer_system_init(void);
 int sleeptimer_wait_next(void);
 
 

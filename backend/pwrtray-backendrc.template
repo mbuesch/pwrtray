@@ -20,3 +20,9 @@ autodim_max_on_ac=1
 [XEVREP]
 # X11 input event reporter grace period (in milliseconds)
 grace_period=1000
+
+[SYSTEM]
+# Application-wide event-slack (in milliseconds).
+# Higher values produce less backend wakeups, but also increase
+# the event latency.
+event_slack=1010

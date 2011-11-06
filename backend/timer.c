@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2010 Michael Buesch <m@bues.ch>
+ *   Copyright (C) 2010-2011 Michael Buesch <m@bues.ch>
  *
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License
@@ -15,6 +15,7 @@
 #include "timer.h"
 #include "main.h"
 #include "log.h"
+#include "conf.h"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -22,6 +23,7 @@
 #include <errno.h>
 #include <string.h>
 #include <assert.h>
+#include <sys/prctl.h>
 
 
 static LIST_HEAD(timer_list);
@@ -178,6 +180,21 @@ void sleeptimer_dequeue(struct sleeptimer *timer)
 	timer_lock();
 	_sleeptimer_dequeue(timer);
 	timer_unlock();
+}
+
+int sleeptimer_system_init(void)
+{
+#ifdef PR_SET_TIMERSLACK
+	unsigned long slack;
+
+	slack = config_get_int(backend.config, "SYSTEM", "event_slack", 1010);
+	slack *= 1000000ul; /* To nanoseconds */
+	if (prctl(PR_SET_TIMERSLACK, slack, 0, 0, 0))
+		logerr("Failed to set timerslack to %lu ns. Ignoring.\n", slack);
+#else
+# warning "PR_SET_TIMERSLACK not available. Ignoring."
+#endif
+	return 0;
 }
 
 int sleeptimer_wait_next(void)

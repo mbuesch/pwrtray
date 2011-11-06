@@ -573,14 +573,19 @@ static int setup_signal_handlers(void)
 
 int mainloop(void)
 {
-	int err = -ENOMEM, value;
+	int err, value;
 	unsigned int timer_errors = 0;
 
 	log_initialize();
 
+	err = -ENOMEM;
 	backend.config = config_file_parse("/etc/pwrtray-backendrc");
 	if (!backend.config)
 		goto error;
+	err = sleeptimer_system_init();
+	if (err)
+		goto error;
+	err = -ENOMEM;
 	backend.battery = battery_probe();
 	if (!backend.battery)
 		goto error;
