@@ -172,7 +172,7 @@ void TrayWindow::updateBacklightSlider(struct pt_message *msg)
 {
 	struct pt_message m;
 	int err;
-	unsigned int step, flags;
+	unsigned int step, flags, val, minval, maxval;
 
 	if (!msg) {
 		err = tray->getBackend()->getBacklightState(&m);
@@ -183,14 +183,21 @@ void TrayWindow::updateBacklightSlider(struct pt_message *msg)
 		msg = &m;
 	}
 
-	blockBrightnessChange = true;
 	step = ntohl(msg->bl_stat.brightness_step);
 	flags = ntohl(msg->bl_stat.flags);
+	val = ntohl(msg->bl_stat.brightness);
+	minval = ntohl(msg->bl_stat.min_brightness);
+	minval = max(step, minval); /* Don't dim fully dark */
+	maxval = ntohl(msg->bl_stat.max_brightness);
+
+	blockBrightnessChange = true;
+
 	brightness->setSingleStep(step);
-	brightness->setMinimum(max(step, (unsigned int)ntohl(msg->bl_stat.min_brightness)));
-	brightness->setMaximum(ntohl(msg->bl_stat.max_brightness));
+	brightness->setMinimum(minval);
+	brightness->setMaximum(maxval);
 	if (!(flags & PT_BL_FLG_AUTODIM))
-		brightness->setValue(ntohl(msg->bl_stat.brightness));
+		brightness->setValue(val);
+
 	blockBrightnessChange = false;
 }
 
