@@ -31,6 +31,11 @@ static inline void * zalloc(size_t size)
 	return calloc(1, size);
 }
 
+static inline int strempty(const char *s)
+{
+	return s[0] == '\0';
+}
+
 uint_fast8_t tiny_hash(const char *str);
 
 #endif /* BACKEND_UTIL_H_ */

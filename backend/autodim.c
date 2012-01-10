@@ -117,7 +117,7 @@ static int autodim_steps_get(struct autodim *ad, struct config_file *config)
 			next[0] = '\0';
 			next++;
 		}
-		if (strlen(s) == 0)
+		if (strempty(s))
 			break;
 		if (stepnr >= ARRAY_SIZE(ad->steps)) {
 			logerr("Too many autodim_steps set in config file (max %d)\n",

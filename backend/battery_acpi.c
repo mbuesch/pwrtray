@@ -144,7 +144,7 @@ static struct battery * battery_acpi_probe(void)
 	}
 	dir_entries_free(&dentries);
 
-	if (ac_dirname[0] == 0 || batt_dirname[0] == 0)
+	if (strempty(ac_dirname) || strempty(batt_dirname))
 		goto error;
 
 	ba = zalloc(sizeof(*ba));
