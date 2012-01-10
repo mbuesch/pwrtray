@@ -187,8 +187,13 @@ void TrayWindow::updateBacklightSlider(struct pt_message *msg)
 	flags = ntohl(msg->bl_stat.flags);
 	val = ntohl(msg->bl_stat.brightness);
 	minval = ntohl(msg->bl_stat.min_brightness);
-	minval = max(step, minval); /* Don't dim fully dark */
 	maxval = ntohl(msg->bl_stat.max_brightness);
+	/* Force minval to >= 1% */
+	if (flags & PT_BL_FLG_AUTODIM)
+		minval = max(minval, 1u);
+	else
+		minval = ((maxval - minval) * 1 / 100) + minval;
+	minval = round_up(minval, step);
 
 	blockBrightnessChange = true;
 

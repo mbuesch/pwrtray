@@ -12,6 +12,9 @@
 #define __stringify(x)		#x
 #define stringify(x)		__stringify(x)
 
+#define round_up(n, s)          ((((n) + (s) - 1) / (s)) * (s))
+
+
 class TrayIcon;
 class Backend;
 
