@@ -181,9 +181,11 @@ int autodim_init(struct autodim *ad, struct backlight *bl,
 		snprintf(path, sizeof(path), "/dev/input/%s", dir_entry->name);
 		fd = open(path, O_RDONLY);
 		if (fd < 0) {
-			logerr("Failed to open %s\n", path);
-			err = -ENOENT;
-			goto err_free_fds;
+			if (errno == ENODEV)
+				continue;
+			logerr("Failed to open %s: %s\n",
+			       path, strerror(errno));
+			continue; /* Continue anyway */
 		}
 
 		err = fcntl(fd, F_SETFL, O_ASYNC | O_NONBLOCK);
