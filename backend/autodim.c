@@ -25,6 +25,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <assert.h>
+#include <math.h>
 
 
 static void autodim_set_backlight(struct autodim *ad, unsigned int percent)
@@ -100,12 +101,9 @@ struct autodim * autodim_alloc(void)
 	return ad;
 }
 
-static int autodim_realloc_steps(struct autodim *ad, unsigned int newcount)
+static int autodim_force_realloc_steps(struct autodim *ad, unsigned int newcount)
 {
 	void *buf;
-
-	if (newcount <= ad->nr_allocated_steps)
-		return 0;
 
 	buf = realloc(ad->steps, newcount * sizeof(*ad->steps));
 	if (!buf) {
@@ -116,6 +114,106 @@ static int autodim_realloc_steps(struct autodim *ad, unsigned int newcount)
 	ad->nr_allocated_steps = newcount;
 
 	return 0;
+}
+
+static int autodim_realloc_steps(struct autodim *ad, unsigned int newcount)
+{
+	if (newcount > ad->nr_allocated_steps)
+		return autodim_force_realloc_steps(ad, newcount);
+	return 0;
+}
+
+static int autodim_smoothen_steps(struct autodim *ad)
+{
+	struct autodim_step *old_steps, *cur, *next;
+	unsigned int old_i, new_i, nr_old_steps, sec;
+	float secdiff, perdiff, ppsec, perc;
+	int ret = 0;
+
+	old_steps = calloc(ad->nr_steps, sizeof(*old_steps));
+	if (!old_steps)
+		return -ENOMEM;
+	memcpy(old_steps, ad->steps, ad->nr_steps * sizeof(*old_steps));
+	nr_old_steps = ad->nr_steps;
+
+	ad->nr_steps = 0;
+	for (old_i = 0, new_i = 0; ; old_i++) {
+		ret = autodim_realloc_steps(ad, new_i + 1);
+		if (ret)
+			goto out;
+		cur = &old_steps[old_i];
+		ad->steps[new_i++] = *cur;
+		if (old_i + 1 >= nr_old_steps)
+			break;
+		if (cur->percent == 0)
+			break;
+		next = &old_steps[old_i + 1];
+		if (next->percent == cur->percent - 1)
+			continue;
+
+		/* Make intermediate steps */
+		secdiff = (float)next->second - (float)cur->second;
+		perdiff = (float)cur->percent - (float)next->percent;
+		if (secdiff <= 0 || perdiff <= 0)
+			continue;
+		ppsec = perdiff / secdiff;
+		sec = cur->second + 1;
+		perc = (float)cur->percent - ppsec;
+		while (sec < next->second) {
+			ret = autodim_realloc_steps(ad, new_i + 1);
+			if (ret)
+				goto out;
+			ad->steps[new_i].second = sec;
+			ad->steps[new_i].percent = max((int)roundf(perc), 0);
+			new_i++;
+			perc -= ppsec;
+			sec += 1;
+		}
+	}
+	ad->nr_steps = new_i;
+
+out:
+	free(old_steps);
+
+	return ret;
+}
+
+static int autodim_optimize_steps(struct autodim *ad)
+{
+	struct autodim_step *cur, *next;
+	unsigned int i;
+	int err;
+
+	/* Remove duplicates */
+	for (i = 0; ad->nr_steps && i < ad->nr_steps - 1; i++) {
+		cur = &ad->steps[i];
+		next = &ad->steps[i + 1];
+		if (cur->percent == next->percent ||
+		    cur->second >= next->second) {
+			/* Remove next. */
+			memmove(&ad->steps[i + 1], &ad->steps[i + 2],
+				(ad->nr_steps - i - 2) * sizeof(*cur));
+			ad->nr_steps--;
+		}
+	}
+
+	err = autodim_force_realloc_steps(ad, ad->nr_steps);
+	if (err)
+		return err;
+
+	return 0;
+}
+
+static void autodim_dump_steps(struct autodim *ad, const char *info)
+{
+	unsigned int i;
+
+	loginfo("Autodim steps (%s): ", info);
+	for (i = 0; i < ad->nr_steps; i++) {
+		loginfo("%u/%u%s", ad->steps[i].second, ad->steps[i].percent,
+			(i + 1 == ad->nr_steps) ? "" : " ");
+	}
+	loginfo("\n");
 }
 
 static int autodim_steps_get(struct autodim *ad, struct config_file *config)
@@ -160,6 +258,22 @@ static int autodim_steps_get(struct autodim *ad, struct config_file *config)
 		s = string_strip(next);
 	}
 	ad->nr_steps = stepnr;
+
+	if (loglevel_is_debug())
+		autodim_dump_steps(ad, "parsed-config");
+	if (config_get_bool(config, "BACKLIGHT", "autodim_smooth", 0)) {
+		ret = autodim_smoothen_steps(ad);
+		if (ret)
+			goto out;
+		if (loglevel_is_debug())
+			autodim_dump_steps(ad, "smoothened");
+	}
+	ret = autodim_optimize_steps(ad);
+	if (ret)
+		goto out;
+	if (loglevel_is_debug())
+		autodim_dump_steps(ad, "optimized");
+
 out:
 	free(string);
 

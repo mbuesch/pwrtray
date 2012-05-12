@@ -5,13 +5,15 @@
 #   idle-seconds/brightness-percent idle-seconds/brightness-percent ...
 # idle-seconds value must be growing.
 autodim_steps=10/90 15/80 25/70 40/60 60/50 65/40 70/30 90/20 110/10 130/0
+# Smoothen the step transitions?
+autodim_smooth=Yes
 # Default maximum brightness value for the autodimmer, in percent.
 autodim_default_max=90
 # Enable auto-dimming by default?
-autodim_default_on=1
+autodim_default_on=Yes
 # Force backlight to autodim-max, if on AC and autodim is enabled?
 # This effectively disables autodim if not on battery power.
-autodim_max_on_ac=1
+autodim_max_on_ac=Yes
 
 [SCREEN]
 # Framebuffer device for screen blanking

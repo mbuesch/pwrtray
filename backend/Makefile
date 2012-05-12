@@ -3,7 +3,7 @@ INSTALL		?= install
 
 CFLAGS		+= -Os -Wall
 LDFLAGS		?=
-LIBS		?= -lrt
+LIBS		?= -lrt -lm
 DESTDIR		?=
 PREFIX		?= /usr/local
 
