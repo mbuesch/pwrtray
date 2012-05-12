@@ -100,6 +100,24 @@ struct autodim * autodim_alloc(void)
 	return ad;
 }
 
+static int autodim_realloc_steps(struct autodim *ad, unsigned int newcount)
+{
+	void *buf;
+
+	if (newcount <= ad->nr_allocated_steps)
+		return 0;
+
+	buf = realloc(ad->steps, newcount * sizeof(*ad->steps));
+	if (!buf) {
+		logerr("Out of memory\n");
+		return -ENOMEM;
+	}
+	ad->steps = buf;
+	ad->nr_allocated_steps = newcount;
+
+	return 0;
+}
+
 static int autodim_steps_get(struct autodim *ad, struct config_file *config)
 {
 	char *string, *s, *next;
@@ -119,12 +137,9 @@ static int autodim_steps_get(struct autodim *ad, struct config_file *config)
 		}
 		if (strempty(s))
 			break;
-		if (stepnr >= ARRAY_SIZE(ad->steps)) {
-			logerr("Too many autodim_steps set in config file (max %d)\n",
-			       (int)ARRAY_SIZE(ad->steps));
-			ret = -EINVAL;
+		ret = autodim_realloc_steps(ad, stepnr + 1);
+		if (ret)
 			goto out;
-		}
 		if (sscanf(s, "%u/%u", &ad->steps[stepnr].second,
 			   &ad->steps[stepnr].percent) != 2) {
 			logerr("Failed to parse autodim_steps config value\n");
@@ -255,8 +270,11 @@ void autodim_destroy(struct autodim *ad)
 
 void autodim_free(struct autodim *ad)
 {
-	if (ad)
+	if (ad) {
+		free(ad->steps);
+		memset(ad, 0, sizeof(*ad));
 		free(ad);
+	}
 }
 
 void autodim_suspend(struct autodim *ad)

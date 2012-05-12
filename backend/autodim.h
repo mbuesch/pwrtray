@@ -21,7 +21,8 @@ struct autodim {
 	unsigned int state;
 	unsigned int bl_percent;
 	unsigned int max_percent;
-	struct autodim_step steps[10];
+	struct autodim_step *steps;
+	unsigned int nr_allocated_steps;
 	unsigned int nr_steps;
 };
 
