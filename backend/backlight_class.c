@@ -71,6 +71,27 @@ static int backlight_class_read_file(struct backlight_class *bc)
 	return 0;
 }
 
+static int backlight_class_update(struct backlight *b)
+{
+	struct backlight_class *bc = container_of(b, struct backlight_class, backlight);
+	int expected_brightness, err;
+
+	expected_brightness = bc->brightness;
+	err = backlight_class_read_file(bc);
+	if (err)
+		return err;
+	if (bc->brightness != expected_brightness &&
+	    bc->brightness != b->min_brightness(b)) {
+		logdebug("Amending backlight brightness from %d to %d\n",
+			 bc->brightness, expected_brightness);
+		err = backlight_class_set_brightness(b, expected_brightness);
+		if (err)
+			return err;
+	}
+
+	return 0;
+}
+
 static void backlight_class_destroy(struct backlight *b)
 {
 	struct backlight_class *bc = container_of(b, struct backlight_class, backlight);
@@ -122,6 +143,8 @@ static struct backlight * backlight_class_probe(void)
 	bc->backlight.current_brightness = backlight_class_current_brightness;
 	bc->backlight.set_brightness = backlight_class_set_brightness;
 	bc->backlight.destroy = backlight_class_destroy;
+	bc->backlight.update = backlight_class_update;
+	bc->backlight.poll_interval = 2000;
 
 	err = backlight_class_read_file(bc);
 	if (err)

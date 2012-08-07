@@ -134,6 +134,15 @@ static int default_screen_is_locked(struct backlight *b)
 	return 0;
 }
 
+static void backlight_poll_callback(struct sleeptimer *timer)
+{
+	struct backlight *b = container_of(timer, struct backlight, timer);
+
+	b->update(b);
+	sleeptimer_set_timeout_relative(&b->timer, b->poll_interval);
+	sleeptimer_enqueue(&b->timer);
+}
+
 void backlight_init(struct backlight *b, const char *name)
 {
 	memset(b, 0, sizeof(*b));
@@ -147,6 +156,16 @@ void backlight_init(struct backlight *b, const char *name)
 	b->screen_is_locked = default_screen_is_locked;
 }
 
+static void backlight_start(struct backlight *b)
+{
+	if (b->poll_interval) {
+		b->update(b);
+		sleeptimer_init(&b->timer, "backlight", backlight_poll_callback);
+		sleeptimer_set_timeout_relative(&b->timer, b->poll_interval);
+		sleeptimer_enqueue(&b->timer);
+	}
+}
+
 struct backlight * backlight_probe(void)
 {
 	struct backlight *b;
@@ -157,6 +176,7 @@ struct backlight * backlight_probe(void)
 		b = probe->func();
 		if (b) {
 			fbblank_init(b);
+			backlight_start(b);
 			logdebug("Initialized backlight driver \"%s\"\n",
 				 b->name);
 			return b;
