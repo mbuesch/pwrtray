@@ -102,20 +102,47 @@ static void backlight_class_destroy(struct backlight *b)
 	free(bc);
 }
 
+static char * backlight_select_sysfs_dir(struct list_head *dir_entries)
+{
+	struct dir_entry *ent;
+
+	/* Prefer acpi_video. */
+	list_for_each_entry(ent, dir_entries, list) {
+		if (!(ent->type & (DT_LNK | DT_DIR)))
+			continue;
+		if (strncmp(ent->name, "acpi_video", 10) == 0)
+			return ent->name;
+	}
+
+	/* Return first entry, otherwise. */
+	list_for_each_entry(ent, dir_entries, list) {
+		if (!(ent->type & (DT_LNK | DT_DIR)))
+			continue;
+		return ent->name;
+	}
+
+	return NULL;
+}
+
 static struct backlight * backlight_class_probe(void)
 {
 	struct backlight_class *bc;
 	struct fileaccess *file, *actual_br_file = NULL, *set_br_file = NULL;
 	LIST_HEAD(dir_entries);
-	struct dir_entry *dir_entry;
 	int err, max_brightness;
+	const char *dirname;
 
 	err = list_sysfs_directory(&dir_entries, BASEPATH);
 	if (err <= 0)
 		return NULL;
-	dir_entry = list_first_entry(&dir_entries, struct dir_entry, list);
+	dirname = backlight_select_sysfs_dir(&dir_entries);
+	if (!dirname)
+		goto err_ent_free;
+	logdebug("class backlight: Using '%s' for brightness adjustment\n",
+		 dirname);
 
-	file = sysfs_file_open(O_RDONLY, "%s/%s/max_brightness", BASEPATH, dir_entry->name);
+	file = sysfs_file_open(O_RDONLY, "%s/%s/max_brightness",
+			       BASEPATH, dirname);
 	if (!file)
 		goto err_files_close;
 	err = file_read_int(file, &max_brightness, 0);
@@ -123,10 +150,12 @@ static struct backlight * backlight_class_probe(void)
 	if (err)
 		goto err_files_close;
 
-	actual_br_file = sysfs_file_open(O_RDONLY, "%s/%s/actual_brightness", BASEPATH, dir_entry->name);
+	actual_br_file = sysfs_file_open(O_RDONLY, "%s/%s/actual_brightness",
+					 BASEPATH, dirname);
 	if (!actual_br_file)
 		goto err_files_close;
-	set_br_file = sysfs_file_open(O_RDWR, "%s/%s/brightness", BASEPATH, dir_entry->name);
+	set_br_file = sysfs_file_open(O_RDWR, "%s/%s/brightness",
+				      BASEPATH, dirname);
 	if (!set_br_file)
 		goto err_files_close;
 
@@ -160,6 +189,7 @@ err_free:
 err_files_close:
 	file_close(set_br_file);
 	file_close(actual_br_file);
+err_ent_free:
 	dir_entries_free(&dir_entries);
 
 	return NULL;
