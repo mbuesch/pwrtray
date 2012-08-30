@@ -110,7 +110,7 @@ struct battery * battery_probe(void)
 		b = probe->func();
 		if (b) {
 			battery_start(b);
-			logdebug("Initialied battery driver \"%s\"\n",
+			logdebug("Initialized battery driver \"%s\"\n",
 				 b->name);
 			return b;
 		}
