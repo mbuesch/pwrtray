@@ -17,10 +17,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
 #include <sys/time.h>
 
 #include <X11/Xlib.h>
 #include <X11/extensions/XInput2.h>
+
+#define PFX	"pwrtray-xevrep: "
 
 
 static pid_t report_pid;
@@ -66,13 +69,16 @@ static void report_event(XIDeviceEvent *ev)
 	timeval_add_msec(&next_report, grace_period_ms);
 
 	err = kill(report_pid, report_signal);
-	if (err)
-		perror("kill");
+	if (err) {
+		fprintf(stderr, PFX
+			"Failed to send signal %d to process %d: %s\n",
+			report_signal, report_pid, strerror(errno));
+	}
 }
 
 static void signal_handler(int signal)
 {
-	printf("pwrtray-xevrep: terminated\n");
+	printf(PFX "terminated\n");
 	exit(0);
 }
 
@@ -120,7 +126,7 @@ int main(int argc, char **argv)
 		/* Fallback to the first display. */
 		display = XOpenDisplay(":0");
 		if (!display) {
-			fprintf(stderr, "Failed to open DISPLAY\n");
+			fprintf(stderr, PFX "Failed to open DISPLAY\n");
 			return 1;
 		}
 	}
@@ -128,7 +134,7 @@ int main(int argc, char **argv)
 
 	res = XQueryExtension(display, "XInputExtension", &xi_opcode, &tmp0, &tmp1);
 	if (!res) {
-		fprintf(stderr, "X Input extension not available.\n");
+		fprintf(stderr, PFX "X Input extension not available.\n");
 		return 1;
 	}
 
@@ -137,7 +143,7 @@ int main(int argc, char **argv)
 	res |= install_sighandler(SIGINT, signal_handler);
 	res |= install_sighandler(SIGTERM, signal_handler);
 	if (res) {
-		fprintf(stderr, "Failed to setup signal handlers\n");
+		fprintf(stderr, PFX "Failed to setup signal handlers\n");
 		return 1;
 	}
 
@@ -156,11 +162,11 @@ int main(int argc, char **argv)
 
 	res = XISelectEvents(display, window, &evmask, 1);
 	if (res != Success) {
-		fprintf(stderr, "Failed to set event mask (%d)\n", res);
+		fprintf(stderr, PFX "Failed to set event mask (%d)\n", res);
 		return 1;
 	}
 
-	printf("pwrtray-xevrep: Monitoring X11 input events...\n");
+	printf(PFX "Monitoring X11 input events...\n");
 	while (1) {
 		XEvent ev;
 		XGenericEventCookie *cookie = &ev.xcookie;
