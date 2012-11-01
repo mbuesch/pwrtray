@@ -22,6 +22,8 @@ autodim_max_on_ac=Yes
 [XEVREP]
 # X11 input event reporter grace period (in milliseconds)
 grace_period=1000
+# pwrtray-xevrep process niceness
+nice=5
 
 [SYSTEM]
 # Application-wide event-slack (in milliseconds).

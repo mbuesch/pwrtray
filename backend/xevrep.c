@@ -25,6 +25,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/resource.h>
 
 
 #define XEVREP_HELPER		"pwrtray-xevrep"
@@ -34,7 +35,7 @@
 int xevrep_enable(struct xevrep *xr)
 {
 	pid_t pid;
-	int grace_period;
+	int err, grace_period, nice_level;
 	char arg1[32], arg2[32], arg3[32];
 
 #ifndef FEATURE_XEVREP
@@ -55,7 +56,7 @@ int xevrep_enable(struct xevrep *xr)
 	snprintf(arg3, sizeof(arg3), "%d", grace_period);
 	pid = vfork();
 	if (pid < 0) {
-		logerr("xevrep_enablet: Failed to fork (%s)\n",
+		logerr("xevrep_enable: Failed to fork (%s)\n",
 		       strerror(errno));
 		return -errno;
 	}
@@ -70,6 +71,15 @@ int xevrep_enable(struct xevrep *xr)
 	xr->helper_pid = pid;
 	logdebug("Forked X11 input event helper %s (pid=%d)\n",
 		 XEVREP_HELPER_PATH, (int)pid);
+
+	nice_level = config_get_int(backend.config,
+				    "XEVREP", "nice", 5);
+	nice_level = clamp(nice_level, -20, 19);
+	err = setpriority(PRIO_PROCESS, pid, nice_level);
+	if (err) {
+		logerr("xevrep_enable: Failed to set %s niceness to %d: %s\n",
+		       XEVREP_HELPER, nice_level, strerror(errno));
+	}
 
 	return 0;
 }
