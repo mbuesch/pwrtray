@@ -30,3 +30,5 @@ nice=5
 # Higher values produce less backend wakeups, but also increase
 # the event latency.
 event_slack=1010
+# pwrtray-backend process niceness
+nice=5

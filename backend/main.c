@@ -37,6 +37,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/stat.h>
+#include <sys/resource.h>
 
 
 struct client {
@@ -571,6 +572,22 @@ static int setup_signal_handlers(void)
 	return err ? -1 : 0;
 }
 
+static int set_niceness(void)
+{
+	int err, nice_level;
+
+	nice_level = config_get_int(backend.config, "SYSTEM", "nice", 5);
+	nice_level = clamp(nice_level, -20, 19);
+	err = setpriority(PRIO_PROCESS, 0, nice_level);
+	if (err) {
+		logerr("Failed to set niceness to %d: %s\n",
+		       nice_level, strerror(errno));
+		return -errno;
+	}
+
+	return 0;
+}
+
 int mainloop(void)
 {
 	int err, value;
@@ -608,6 +625,9 @@ int mainloop(void)
 	if (err)
 		goto error;
 	err = setup_signal_handlers();
+	if (err)
+		goto error;
+	err = set_niceness();
 	if (err)
 		goto error;
 
