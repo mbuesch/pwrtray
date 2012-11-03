@@ -189,10 +189,13 @@ struct backlight * backlight_probe(void)
 
 void backlight_destroy(struct backlight *b)
 {
-	if (b) {
-		fbblank_exit(b);
-		b->destroy(b);
-	}
+	if (!b)
+		return;
+
+	fbblank_exit(b);
+	b->screen_lock(b, 0);
+	b->set_brightness(b, b->max_brightness(b));
+	b->destroy(b);
 }
 
 int backlight_fill_pt_message_stat(struct backlight *b, struct pt_message *msg)
