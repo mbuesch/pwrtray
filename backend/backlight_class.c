@@ -64,26 +64,27 @@ static int backlight_class_read_file(struct backlight_class *bc)
 	err = file_read_int(bc->actual_br_file, &value, 0);
 	if (err) {
 		logerr("WARNING: Failed to read actual backlight brightness\n");
-		return err;
+		return -abs(err);
 	}
-	bc->brightness = value;
 
-	return 0;
+	return value;
 }
 
 static int backlight_class_update(struct backlight *b)
 {
 	struct backlight_class *bc = container_of(b, struct backlight_class, backlight);
-	int expected_brightness, err;
+	int expected_brightness, cur_brightness, err, res;
 
 	expected_brightness = bc->brightness;
-	err = backlight_class_read_file(bc);
-	if (err)
-		return err;
-	if (bc->brightness != expected_brightness &&
-	    bc->brightness != b->min_brightness(b)) {
+	res = backlight_class_read_file(bc);
+	if (res < 0)
+		return res;
+	cur_brightness = res;
+
+	if (cur_brightness != expected_brightness &&
+	    cur_brightness != b->min_brightness(b)) {
 		logdebug("Amending backlight brightness from %d to %d\n",
-			 bc->brightness, expected_brightness);
+			 cur_brightness, expected_brightness);
 		err = backlight_class_set_brightness(b, expected_brightness);
 		if (err)
 			return err;
@@ -129,7 +130,7 @@ static struct backlight * backlight_class_probe(void)
 	struct backlight_class *bc;
 	struct fileaccess *file, *actual_br_file = NULL, *set_br_file = NULL;
 	LIST_HEAD(dir_entries);
-	int err, max_brightness;
+	int err, res, max_brightness;
 	const char *dirname;
 
 	err = list_sysfs_directory(&dir_entries, BASEPATH);
@@ -175,9 +176,10 @@ static struct backlight * backlight_class_probe(void)
 	bc->backlight.update = backlight_class_update;
 	bc->backlight.poll_interval = 2000;
 
-	err = backlight_class_read_file(bc);
-	if (err)
+	res = backlight_class_read_file(bc);
+	if (res < 0)
 		goto err_free;
+	bc->brightness = res;
 	backlight_notify_state_change(&bc->backlight);
 
 	dir_entries_free(&dir_entries);
