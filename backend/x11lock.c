@@ -44,19 +44,14 @@ int block_x11_input(struct x11lock *xl)
 		return 0;
 	if (xl->helper_pid)
 		return 0;
-	pid = vfork();
+
+	pid = subprocess_exec(X11LOCK_HELPER_PATH);
 	if (pid < 0) {
-		logerr("block_x11_input: Failed to fork (%s)\n",
-		       strerror(errno));
-		return -errno;
+		logerr("block_x11_input: Failed to execute '%s'.\n",
+		       X11LOCK_HELPER_PATH);
+		return -ENOENT;
 	}
-	if (pid == 0) { /* Child */
-		execl(X11LOCK_HELPER_PATH, X11LOCK_HELPER, NULL);
-		logerr("block_x11_input: Failed to exec %s: %s\n",
-		       X11LOCK_HELPER_PATH, strerror(errno));
-		exit(0);
-		while (1);
-	}
+
 	xl->helper_pid = pid;
 	logdebug("Forked X11 input blocker helper %s (pid=%d)\n",
 		 X11LOCK_HELPER_PATH, (int)pid);

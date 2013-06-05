@@ -36,7 +36,7 @@ int xevrep_enable(struct xevrep *xr)
 {
 	pid_t pid;
 	int err, grace_period, nice_level;
-	char arg1[32], arg2[32], arg3[32];
+	char command[128];
 
 #ifndef FEATURE_XEVREP
 # warning "X11 input event reporting feature disabled"
@@ -51,23 +51,16 @@ int xevrep_enable(struct xevrep *xr)
 	grace_period = config_get_int(backend.config,
 				      "XEVREP", "grace_period",
 				      1000);
-	snprintf(arg1, sizeof(arg1), "%d", getpid());
-	snprintf(arg2, sizeof(arg2), "%d", SIGUSR1);
-	snprintf(arg3, sizeof(arg3), "%d", grace_period);
-	pid = vfork();
+	snprintf(command, sizeof(command), "%s %d %d %d",
+		 XEVREP_HELPER_PATH,
+		 getpid(), SIGUSR1, grace_period);
+	pid = subprocess_exec(command);
 	if (pid < 0) {
-		logerr("xevrep_enable: Failed to fork (%s)\n",
-		       strerror(errno));
-		return -errno;
+		logerr("xevrep_enable: Failed to execute '%s'.\n",
+		       XEVREP_HELPER_PATH);
+		return -ENOENT;
 	}
-	if (pid == 0) { /* Child */
-		execl(XEVREP_HELPER_PATH, XEVREP_HELPER,
-		      arg1, arg2, arg3, NULL);
-		logerr("xevrep_enable: Failed to exec %s: %s\n",
-		       XEVREP_HELPER_PATH, strerror(errno));
-		exit(0);
-		while (1);
-	}
+
 	xr->helper_pid = pid;
 	logdebug("Forked X11 input event helper %s (pid=%d)\n",
 		 XEVREP_HELPER_PATH, (int)pid);

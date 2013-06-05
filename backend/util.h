@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <unistd.h>
 
 #include "list.h"
 
@@ -25,6 +26,7 @@
 
 void msleep(unsigned int msecs);
 char * string_strip(char *str);
+char * string_split(char *str, char sep);
 
 static inline void * zalloc(size_t size)
 {
@@ -33,9 +35,11 @@ static inline void * zalloc(size_t size)
 
 static inline int strempty(const char *s)
 {
-	return s[0] == '\0';
+	return (s == NULL) || (s[0] == '\0');
 }
 
 uint_fast8_t tiny_hash(const char *str);
+
+pid_t subprocess_exec(const char *_command);
 
 #endif /* BACKEND_UTIL_H_ */

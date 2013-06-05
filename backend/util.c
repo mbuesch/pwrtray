@@ -13,6 +13,7 @@
  */
 
 #include "util.h"
+#include "log.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -62,6 +63,22 @@ char * string_strip(char *str)
 	return start;
 }
 
+char * string_split(char *str, char sep)
+{
+	char c;
+
+	if (!str)
+		return NULL;
+	for (c = *str; c != '\0' && c != sep; c = *str)
+		str++;
+	if (c == sep) {
+		*str = '\0';
+		return str + 1;
+	}
+
+	return NULL;
+}
+
 uint_fast8_t tiny_hash(const char *str)
 {
 	uint8_t c, hash = 21;
@@ -70,4 +87,64 @@ uint_fast8_t tiny_hash(const char *str)
 		hash = ((hash << 3) + hash) + c;
 
 	return hash;
+}
+
+pid_t subprocess_exec(const char *_command)
+{
+	char *command, *command_mem = NULL;
+	char *argv[32] = { };
+	unsigned int i;
+	long err = 0;
+	pid_t pid;
+
+	command = strdup(_command);
+	if (!command) {
+		logerr("Out of memory!");
+		err = -ENOMEM;
+		goto out;
+	}
+	command_mem = command;
+
+	for (i = 0; i < ARRAY_SIZE(argv) - 1; i++) {
+		argv[i] = command;
+		command = string_split(command, ' ');
+		if (strempty(argv[i])) {
+			/* Skip empty elements */
+			argv[i] = NULL;
+			i--;
+		}
+		if (!command)
+			break;
+	}
+	if (command) {
+		logerr("subprocess_exec: Too many arguments: '%s'\n", _command);
+		err = -EINVAL;
+		goto out;
+	}
+	if (!argv[0]) {
+		logerr("subprocess_exec: Too few arguments\n");
+		err = -EINVAL;
+		goto out;
+	}
+
+	pid = vfork();
+	if (pid < 0) {
+		logerr("subprocess_exec: Failed to fork (%s)\n", strerror(errno));
+		err = -errno;
+		goto out;
+	}
+	if (pid == 0) { /* Child */
+		execv(argv[0], argv);
+		logerr("subprocess_exec: Failed to exec '%s': %s\n",
+		       _command, strerror(errno));
+		exit(0);
+		while (1);
+	}
+
+	err = pid;
+
+out:
+	free(command_mem);
+
+	return err;
 }
