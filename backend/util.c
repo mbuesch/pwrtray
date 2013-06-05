@@ -63,17 +63,18 @@ char * string_strip(char *str)
 	return start;
 }
 
-char * string_split(char *str, char sep)
+char * string_split(char *str, int (*sep_match)(int c))
 {
 	char c;
 
 	if (!str)
 		return NULL;
-	for (c = *str; c != '\0' && c != sep; c = *str)
+	for (c = *str; c != '\0'; c = *str) {
+		if (sep_match(c)) {
+			*str = '\0';
+			return str + 1;
+		}
 		str++;
-	if (c == sep) {
-		*str = '\0';
-		return str + 1;
 	}
 
 	return NULL;
@@ -107,7 +108,7 @@ pid_t subprocess_exec(const char *_command)
 
 	for (i = 0; i < ARRAY_SIZE(argv) - 1; i++) {
 		argv[i] = command;
-		command = string_split(command, ' ');
+		command = string_split(command, isspace);
 		if (strempty(argv[i])) {
 			/* Skip empty elements */
 			argv[i] = NULL;

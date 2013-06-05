@@ -26,7 +26,7 @@
 
 void msleep(unsigned int msecs);
 char * string_strip(char *str);
-char * string_split(char *str, char sep);
+char * string_split(char *str, int (*sep_match)(int c));
 
 static inline void * zalloc(size_t size)
 {
