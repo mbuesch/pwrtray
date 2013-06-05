@@ -545,29 +545,29 @@ void unblock_signals(void)
 	}
 }
 
-static int install_sighandler(int signal, void (*handler)(int))
+static int install_sighandler(int signal, int ignore, void (*handler)(int))
 {
 	struct sigaction act;
 
 	memset(&act, 0, sizeof(act));
 	sigset_set_blocked_sigs(&act.sa_mask);
 	act.sa_flags = 0;
-	act.sa_handler = handler;
+	act.sa_handler = ignore ? SIG_IGN : handler;
 
 	return sigaction(signal, &act, NULL);
 }
 
-static int setup_signal_handlers(void)
+static int setup_signal_handlers(int ignore_signals)
 {
 	int err = 0;
 
-	err |= install_sighandler(SIGINT, signal_terminate);
-	err |= install_sighandler(SIGTERM, signal_terminate);
-	err |= install_sighandler(SIGPIPE, signal_pipe);
-	err |= install_sighandler(SIGIO, signal_async_io);
-	err |= install_sighandler(SIGUSR1, signal_input_event_1);
-	err |= install_sighandler(SIGUSR2, signal_input_event_2);
-	err |= install_sighandler(SIGCHLD, signal_child);
+	err |= install_sighandler(SIGINT, ignore_signals, signal_terminate);
+	err |= install_sighandler(SIGTERM, ignore_signals, signal_terminate);
+	err |= install_sighandler(SIGPIPE, ignore_signals, signal_pipe);
+	err |= install_sighandler(SIGIO, ignore_signals, signal_async_io);
+	err |= install_sighandler(SIGUSR1, ignore_signals, signal_input_event_1);
+	err |= install_sighandler(SIGUSR2, ignore_signals, signal_input_event_2);
+	err |= install_sighandler(SIGCHLD, ignore_signals, signal_child);
 
 	return err ? -1 : 0;
 }
@@ -594,6 +594,10 @@ int mainloop(void)
 	unsigned int timer_errors = 0;
 
 	log_initialize();
+
+	err = setup_signal_handlers(1);
+	if (err)
+		goto error;
 
 	err = -ENOMEM;
 	backend.config = config_file_parse("/etc/pwrtray-backendrc");
@@ -624,7 +628,7 @@ int mainloop(void)
 	err = create_pidfile();
 	if (err)
 		goto error;
-	err = setup_signal_handlers();
+	err = setup_signal_handlers(0);
 	if (err)
 		goto error;
 	err = set_niceness();
