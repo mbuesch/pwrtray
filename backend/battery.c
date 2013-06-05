@@ -126,6 +126,70 @@ void battery_destroy(struct battery *b)
 		b->destroy(b);
 }
 
+static void battery_emergency_check(struct battery *b)
+{
+	int threshold, level, min_level, max_level;
+	int on_ac, charging;
+	const char *command;
+	pid_t pid;
+
+	threshold = config_get_int(backend.config, "BATTERY",
+				   "emergency_threshold", 0);
+	if (threshold <= 0)
+		return;
+	threshold = min(threshold, 95);
+
+	on_ac = b->on_ac(b);
+	charging = b->charging(b);
+	if (on_ac < 0 && charging < 0) {
+		/* We don't know whether we are charging or draining
+		 * the battery. Assume charging and don't flag emergency.
+		 */
+		return;
+	}
+	if (on_ac > 0 || charging > 0) {
+		/* We are not draining the battery. */
+		return;
+	}
+
+	min_level = b->min_level(b);
+	max_level = b->max_level(b);
+	level = b->charge_level(b);
+	if (min_level < 0 || max_level < 0 || level < 0)
+		return;
+
+	/* To percent */
+	level = (level - min_level) * 100 / (max_level - min_level);
+
+	if (level > threshold) {
+		/* No emergency status */
+		b->emergency_handled = 0;
+		return;
+	}
+	if (b->emergency_handled)
+		return;
+
+	loginfo("Battery emergency threshold reached. (level=%d%% <= threshold=%d%%)\n",
+		level, threshold);
+
+	b->emergency_handled = 1;
+
+	command = config_get(backend.config, "BATTERY",
+			     "emergency_command", NULL);
+	if (strempty(command)) {
+		logerr("No 'emergency_command' in 'BATTERY' section of "
+		       "config file. Ignoring emergency state.\n");
+		return;
+	}
+	loginfo("Executing '%s'\n", command);
+
+	pid = subprocess_exec(command);
+	if (pid < 0) {
+		logerr("Failed to execute 'emergency_command'.\n");
+		return;
+	}
+}
+
 int battery_fill_pt_message_stat(struct battery *b, struct pt_message *msg)
 {
 	msg->bat_stat.flags = 0;
@@ -144,6 +208,8 @@ int battery_notify_state_change(struct battery *b)
 		.id	= htons(PTNOTI_BAT_CHANGED),
 	};
 	int err;
+
+	battery_emergency_check(b);
 
 	err = battery_fill_pt_message_stat(b, &msg);
 	if (err)

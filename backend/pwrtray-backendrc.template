@@ -19,6 +19,13 @@ autodim_max_on_ac=Yes
 # Framebuffer device for screen blanking
 #fbdev=/dev/fb0
 
+[BATTERY]
+# Emergency threshold, in percent.
+# Set to 0 to disable emergency state checking.
+emergency_threshold=0
+# Emergency command to execute if battery level is below threshold.
+emergency_command=/usr/sbin/hibernate-disk
+
 [XEVREP]
 # X11 input event reporter grace period (in milliseconds)
 grace_period=1000

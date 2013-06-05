@@ -37,6 +37,7 @@ struct battery {
 
 	/* Internal */
 	struct sleeptimer timer;
+	int emergency_handled;
 };
 
 void battery_init(struct battery *b, const char *name);
