@@ -211,6 +211,9 @@ int battery_notify_state_change(struct battery *b)
 
 	battery_emergency_check(b);
 
+	if (backend.autodim)
+		autodim_handle_input_event(backend.autodim);
+
 	err = battery_fill_pt_message_stat(b, &msg);
 	if (err)
 		return err;

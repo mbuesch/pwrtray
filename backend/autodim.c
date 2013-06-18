@@ -435,3 +435,10 @@ void autodim_handle_input_event(struct autodim *ad)
 	autodim_timer_start(ad);
 	autodim_set_backlight(ad, ad->max_percent);
 }
+
+void autodim_handle_battery_event(struct autodim *ad)
+{
+	logverbose("Autodim: Got battery event.\n");
+	/* Handle possible change of "on-AC" state. */
+	autodim_set_backlight(ad, ad->bl_percent);
+}
