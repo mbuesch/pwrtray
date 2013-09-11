@@ -108,6 +108,10 @@ static void battery_acpi_destroy(struct battery *b)
 {
 	struct battery_acpi *ba = container_of(b, struct battery_acpi, battery);
 
+	free(ba->ac_online_filename);
+	free(ba->charge_max_filename);
+	free(ba->charge_now_filename);
+
 	free(ba);
 }
 
@@ -277,9 +281,9 @@ static struct battery * battery_acpi_probe(void)
 	ba->battery.max_level = battery_acpi_max_level;
 	ba->battery.charge_level = battery_acpi_charge_level;
 	ba->battery.poll_interval = 10000;
-	strncpy(ba->ac_online_filename, ac_file, sizeof(ba->ac_online_filename) - 1);
-	strncpy(ba->charge_max_filename, full_file, sizeof(ba->charge_max_filename) - 1);
-	strncpy(ba->charge_now_filename, now_file, sizeof(ba->charge_now_filename) - 1);
+	ba->ac_online_filename = strdup(ac_file);
+	ba->charge_max_filename = strdup(full_file);
+	ba->charge_now_filename = strdup(now_file);
 
 	return &ba->battery;
 

@@ -3,8 +3,6 @@
 
 #include "battery.h"
 
-#include <limits.h>
-
 
 struct battery_acpi {
 	struct battery battery;
@@ -13,9 +11,9 @@ struct battery_acpi {
 	int charge_max;
 	int charge_now;
 
-	char ac_online_filename[PATH_MAX + 1];
-	char charge_max_filename[PATH_MAX + 1];
-	char charge_now_filename[PATH_MAX + 1];
+	char *ac_online_filename;
+	char *charge_max_filename;
+	char *charge_now_filename;
 };
 
 #endif /* BACKEND_BATTERY_ACPI_H_ */
