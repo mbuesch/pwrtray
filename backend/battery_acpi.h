@@ -13,9 +13,9 @@ struct battery_acpi {
 	int charge_max;
 	int charge_now;
 
-	char ac_online_filename[NAME_MAX + 1];
-	char charge_max_filename[NAME_MAX + 1];
-	char charge_now_filename[NAME_MAX + 1];
+	char ac_online_filename[PATH_MAX + 1];
+	char charge_max_filename[PATH_MAX + 1];
+	char charge_now_filename[PATH_MAX + 1];
 };
 
 #endif /* BACKEND_BATTERY_ACPI_H_ */

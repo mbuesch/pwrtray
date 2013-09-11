@@ -116,35 +116,154 @@ static struct battery * battery_acpi_probe(void)
 	struct battery_acpi *ba;
 	LIST_HEAD(dentries);
 	struct dir_entry *dentry;
-	char ac_dirname[NAME_MAX + 1] = { 0, };
-	char batt_dirname[NAME_MAX + 1] = { 0, };
-	int res;
+	char ac_file[PATH_MAX + 1] = { 0, };
+	char full_file[PATH_MAX + 1] = { 0, };
+	char now_file[PATH_MAX + 1] = { 0, };
+	int res, ok;
 
-	res = list_sysfs_directory(&dentries, AC_BASEDIR);
+	/* Init base directories. */
+	strncat(ac_file, AC_BASEDIR, sizeof(ac_file) - strlen(ac_file) - 1);
+	strncat(full_file, BATT_BASEDIR, sizeof(full_file) - strlen(full_file) - 1);
+	strncat(now_file, BATT_BASEDIR, sizeof(now_file) - strlen(now_file) - 1);
+
+	/* Find the AC-online file */
+	res = list_sysfs_directory(&dentries, ac_file);
 	if (res <= 0)
 		goto error;
+	ok = 0;
 	list_for_each_entry(dentry, &dentries, list) {
-		if (dentry->type != DT_LNK ||
-		    strncmp(dentry->name, "ACPI", 4) != 0)
-			continue;
-		strncpy(ac_dirname, dentry->name, sizeof(ac_dirname) - 1);
-		break;
+		if (dentry->type == DT_LNK &&
+		    strncmp(dentry->name, "ACPI", 4) == 0) {
+			strncat(ac_file, "/", sizeof(ac_file) - strlen(ac_file) - 1);
+			strncat(ac_file, dentry->name, sizeof(ac_file) - strlen(ac_file) - 1);
+			strncat(ac_file, "/power_supply", sizeof(ac_file) - strlen(ac_file) - 1);
+			ok = 1;
+			break;
+		}
 	}
 	dir_entries_free(&dentries);
-
-	res = list_sysfs_directory(&dentries, BATT_BASEDIR);
+	if (!ok)
+		goto error;
+	res = list_sysfs_directory(&dentries, ac_file);
 	if (res <= 0)
 		goto error;
+	ok = 0;
 	list_for_each_entry(dentry, &dentries, list) {
-		if (dentry->type != DT_LNK ||
-		    strncmp(dentry->name, "PNP", 3) != 0)
-			continue;
-		strncpy(batt_dirname, dentry->name, sizeof(batt_dirname) - 1);
-		break;
+		if (dentry->type == DT_DIR &&
+		    strncmp(dentry->name, "AC", 2) == 0) {
+			strncat(ac_file, "/", sizeof(ac_file) - strlen(ac_file) - 1);
+			strncat(ac_file, dentry->name, sizeof(ac_file) - strlen(ac_file) - 1);
+			strncat(ac_file, "/online", sizeof(ac_file) - strlen(ac_file) - 1);
+			ok = 1;
+			break;
+		}
 	}
 	dir_entries_free(&dentries);
+	if (!ok)
+		goto error;
 
-	if (strempty(ac_dirname) || strempty(batt_dirname))
+	/* Find the battery-full file */
+	res = list_sysfs_directory(&dentries, full_file);
+	if (res <= 0)
+		goto error;
+	ok = 0;
+	list_for_each_entry(dentry, &dentries, list) {
+		if (dentry->type == DT_LNK &&
+		    strncmp(dentry->name, "PNP", 3) == 0) {
+			strncat(full_file, "/", sizeof(full_file) - strlen(full_file) - 1);
+			strncat(full_file, dentry->name, sizeof(full_file) - strlen(full_file) - 1);
+			strncat(full_file, "/power_supply", sizeof(full_file) - strlen(full_file) - 1);
+			ok = 1;
+			break;
+		}
+	}
+	dir_entries_free(&dentries);
+	if (!ok)
+		goto error;
+	res = list_sysfs_directory(&dentries, full_file);
+	if (res <= 0)
+		goto error;
+	ok = 0;
+	list_for_each_entry(dentry, &dentries, list) {
+		if (dentry->type == DT_DIR &&
+		    strncmp(dentry->name, "BAT", 3) == 0) {
+			strncat(full_file, "/", sizeof(full_file) - strlen(full_file) - 1);
+			strncat(full_file, dentry->name, sizeof(full_file) - strlen(full_file) - 1);
+			ok = 1;
+			break;
+		}
+	}
+	dir_entries_free(&dentries);
+	if (!ok)
+		goto error;
+	res = list_sysfs_directory(&dentries, full_file);
+	if (res <= 0)
+		goto error;
+	ok = 0;
+	list_for_each_entry(dentry, &dentries, list) {
+		if (dentry->type == DT_REG &&
+		    (strcmp(dentry->name, "charge_full") == 0 ||
+		     strcmp(dentry->name, "energy_full") == 0)) {
+			strncat(full_file, "/", sizeof(full_file) - strlen(full_file) - 1);
+			strncat(full_file, dentry->name, sizeof(full_file) - strlen(full_file) - 1);
+			ok = 1;
+			break;
+		}
+	}
+	dir_entries_free(&dentries);
+	if (!ok)
+		goto error;
+
+	/* Find the battery-now file */
+	res = list_sysfs_directory(&dentries, now_file);
+	if (res <= 0)
+		goto error;
+	ok = 0;
+	list_for_each_entry(dentry, &dentries, list) {
+		if (dentry->type == DT_LNK &&
+		    strncmp(dentry->name, "PNP", 3) == 0) {
+			strncat(now_file, "/", sizeof(now_file) - strlen(now_file) - 1);
+			strncat(now_file, dentry->name, sizeof(now_file) - strlen(now_file) - 1);
+			strncat(now_file, "/power_supply", sizeof(now_file) - strlen(now_file) - 1);
+			ok = 1;
+			break;
+		}
+	}
+	dir_entries_free(&dentries);
+	if (!ok)
+		goto error;
+	res = list_sysfs_directory(&dentries, now_file);
+	if (res <= 0)
+		goto error;
+	ok = 0;
+	list_for_each_entry(dentry, &dentries, list) {
+		if (dentry->type == DT_DIR &&
+		    strncmp(dentry->name, "BAT", 3) == 0) {
+			strncat(now_file, "/", sizeof(now_file) - strlen(now_file) - 1);
+			strncat(now_file, dentry->name, sizeof(now_file) - strlen(now_file) - 1);
+			ok = 1;
+			break;
+		}
+	}
+	dir_entries_free(&dentries);
+	if (!ok)
+		goto error;
+	res = list_sysfs_directory(&dentries, now_file);
+	if (res <= 0)
+		goto error;
+	ok = 0;
+	list_for_each_entry(dentry, &dentries, list) {
+		if (dentry->type == DT_REG &&
+		    (strcmp(dentry->name, "charge_now") == 0 ||
+		     strcmp(dentry->name, "energy_now") == 0)) {
+			strncat(now_file, "/", sizeof(now_file) - strlen(now_file) - 1);
+			strncat(now_file, dentry->name, sizeof(now_file) - strlen(now_file) - 1);
+			ok = 1;
+			break;
+		}
+	}
+	dir_entries_free(&dentries);
+	if (!ok)
 		goto error;
 
 	ba = zalloc(sizeof(*ba));
@@ -158,15 +277,9 @@ static struct battery * battery_acpi_probe(void)
 	ba->battery.max_level = battery_acpi_max_level;
 	ba->battery.charge_level = battery_acpi_charge_level;
 	ba->battery.poll_interval = 10000;
-	snprintf(ba->ac_online_filename, sizeof(ba->ac_online_filename),
-		 "%s/%s/power_supply/AC0/online",
-		 AC_BASEDIR, ac_dirname);
-	snprintf(ba->charge_max_filename, sizeof(ba->charge_max_filename),
-		 "%s/%s/power_supply/BAT0/charge_full",
-		 BATT_BASEDIR, batt_dirname);
-	snprintf(ba->charge_now_filename, sizeof(ba->charge_now_filename),
-		 "%s/%s/power_supply/BAT0/charge_now",
-		 BATT_BASEDIR, batt_dirname);
+	strncpy(ba->ac_online_filename, ac_file, sizeof(ba->ac_online_filename) - 1);
+	strncpy(ba->charge_max_filename, full_file, sizeof(ba->charge_max_filename) - 1);
+	strncpy(ba->charge_now_filename, now_file, sizeof(ba->charge_now_filename) - 1);
 
 	return &ba->battery;
 
