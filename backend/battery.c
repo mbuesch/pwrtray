@@ -16,6 +16,7 @@
 #include "log.h"
 #include "main.h"
 
+#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -159,7 +160,7 @@ static void battery_emergency_check(struct battery *b)
 		return;
 
 	/* To percent */
-	level = (level - min_level) * 100 / (max_level - min_level);
+	level = (int64_t)(level - min_level) * 100 / (max_level - min_level);
 
 	if (level > threshold) {
 		/* No emergency status */

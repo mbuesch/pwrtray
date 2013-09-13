@@ -26,6 +26,7 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <string.h>
+#include <stdint.h>
 #include <sys/signal.h>
 
 
@@ -162,7 +163,7 @@ void TrayWindow::updateBattBar(struct pt_message *msg)
 
 	range = maxval - minval;
 	if (range)
-		percent = (curval - minval) * 100 / range;
+		percent = static_cast<uint64_t>(curval - minval) * 100 / range;
 	else
 		percent = 0;
 	tray->setBatteryToolTip(QString("%1 %2%").arg(battText).arg(percent));

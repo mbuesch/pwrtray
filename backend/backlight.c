@@ -18,6 +18,7 @@
 #include "x11lock.h"
 #include "util.h"
 
+#include <stdint.h>
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
@@ -214,7 +215,7 @@ int backlight_fill_pt_message_stat(struct backlight *b, struct pt_message *msg)
 	autodim_max = clamp(autodim_max, 0, 100);
 
 	if (autodim_enabled) {
-		cur_brightness = cur_brightness * 100 / (max_brightness - min_brightness);
+		cur_brightness = (int64_t)cur_brightness * 100 / (max_brightness - min_brightness);
 		min_brightness = 0;
 		max_brightness = 100;
 		brightness_step = 1;
