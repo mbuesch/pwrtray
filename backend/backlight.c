@@ -292,7 +292,7 @@ int backlight_set_percentage(struct backlight *b, unsigned int percent)
 	int err, value, range;
 
 	range = bmax - bmin;
-	value = (range * percent / 100) + bmin;
+	value = ((int64_t)range * percent / 100) + bmin;
 
 	err = backlight_set_brightness(b, value);
 	if (!err)
