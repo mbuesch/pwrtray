@@ -1,7 +1,7 @@
 CC		?= gcc
 INSTALL		?= install
 
-CFLAGS		+= -Os -Wall
+CFLAGS		+= -g -Os -Wall
 LDFLAGS		?=
 LIBS		?= -lrt -lm
 DESTDIR		?=
