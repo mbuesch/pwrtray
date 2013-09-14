@@ -27,7 +27,7 @@
 
 
 static LIST_HEAD(timer_list);
-static unsigned int id_counter;
+static timer_id_t id_counter;
 
 #if defined(__mips__) && !defined(__NR_Linux)
 # define __NR_Linux		4000
@@ -146,7 +146,7 @@ void sleeptimer_set_timeout_relative(struct sleeptimer *timer,
 	timespec_add_msec(&timer->timeout, msecs);
 }
 
-static void _sleeptimer_dequeue(struct sleeptimer *timer)
+static void do_sleeptimer_dequeue(struct sleeptimer *timer)
 {
 	list_del_init(&timer->list);
 }
@@ -159,7 +159,7 @@ void sleeptimer_enqueue(struct sleeptimer *timer)
 	timer_lock();
 
 	if (!list_empty(&timer->list))
-		_sleeptimer_dequeue(timer);
+		do_sleeptimer_dequeue(timer);
 
 	list_for_each_entry(i, &timer_list, list) {
 		if (timespec_after(&i->timeout, &timer->timeout)) {
@@ -178,7 +178,7 @@ void sleeptimer_enqueue(struct sleeptimer *timer)
 void sleeptimer_dequeue(struct sleeptimer *timer)
 {
 	timer_lock();
-	_sleeptimer_dequeue(timer);
+	do_sleeptimer_dequeue(timer);
 	timer_unlock();
 }
 
@@ -200,8 +200,8 @@ int sleeptimer_system_init(void)
 int sleeptimer_wait_next(void)
 {
 	struct timespec timeout;
-	struct sleeptimer *timer = NULL, *new_timer;
-	unsigned int timer_id = 0;
+	struct sleeptimer *timer = NULL;
+	timer_id_t timer_id = 0;
 	int err;
 
 	timer_lock();
@@ -229,10 +229,12 @@ int sleeptimer_wait_next(void)
 	}
 
 	timer_lock();
-	if (!list_empty(&timer_list)) {
-		new_timer = list_first_entry(&timer_list, struct sleeptimer, list);
-		if (new_timer == timer && new_timer->id == timer_id)
+	list_for_each_entry(timer, &timer_list, list) {
+		if (timer->id == timer_id) {
+			do_sleeptimer_dequeue(timer);
 			timer->callback(timer);
+			break;
+		}
 	}
 	timer_unlock();
 

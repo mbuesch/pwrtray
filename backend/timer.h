@@ -4,6 +4,7 @@
 #include "list.h"
 
 #include <time.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,11 +15,13 @@ struct sleeptimer;
 
 typedef void (*sleeptimer_callback_t)(struct sleeptimer *timer);
 
+typedef uint64_t timer_id_t;
+
 struct sleeptimer {
 	const char *name;
 	struct timespec timeout;
 	sleeptimer_callback_t callback;
-	unsigned int id;
+	timer_id_t id;
 	struct list_head list;
 };
 
