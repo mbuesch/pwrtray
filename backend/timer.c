@@ -17,6 +17,7 @@
 #include "log.h"
 #include "conf.h"
 
+#include <time.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -29,57 +30,6 @@
 static LIST_HEAD(timer_list);
 static timer_id_t id_counter;
 
-#if defined(__mips__) && !defined(__NR_Linux)
-# define __NR_Linux		4000
-#endif
-
-#ifndef __NR_clock_gettime
-# if defined(__powerpc__)
-#  define __NR_clock_gettime	246
-# elif defined(__i386__)
-#  define __NR_clock_gettime	(259+6)
-# elif defined(__x86_64__)
-#  define __NR_clock_gettime	228
-# elif defined(__arm__)
-#  define __NR_clock_gettime	263
-# elif defined(__mips__)
-#  define __NR_clock_gettime	(__NR_Linux + 263)
-# elif defined(__avr32__) || defined(__AVR32__)
-#  define __NR_clock_gettime	216
-# else
-#  error "__NR_clock_gettime unknown"
-# endif
-#endif
-
-#ifndef __NR_clock_nanosleep
-# if defined(__powerpc__)
-#  define __NR_clock_nanosleep	248
-# elif defined(__i386__)
-#  define __NR_clock_nanosleep	(259+8)
-# elif defined(__x86_64__)
-#  define __NR_clock_nanosleep	230
-# elif defined(__arm__)
-#  define __NR_clock_nanosleep	265
-# elif defined(__mips__)
-#  define __NR_clock_nanosleep	(__NR_Linux + 265)
-# elif defined(__avr32__) || defined(__AVR32__)
-#  define __NR_clock_nanosleep	218
-# else
-#  error "__NR_clock_nanosleep unknown"
-# endif
-#endif
-
-static int timer_clock_gettime(clockid_t clock_id, struct timespec *t)
-{
-	return syscall(__NR_clock_gettime, clock_id, t);
-}
-
-static int timer_clock_nanosleep(clockid_t clock_id, int flags,
-				 const struct timespec *req,
-				 struct timespec *rem)
-{
-	return syscall(__NR_clock_nanosleep, clock_id, flags, req, rem);
-}
 
 static inline void timer_lock(void)
 {
@@ -137,7 +87,7 @@ void sleeptimer_set_timeout_relative(struct sleeptimer *timer,
 {
 	int err;
 
-	err = timer_clock_gettime(CLOCK_MONOTONIC, &timer->timeout);
+	err = clock_gettime(CLOCK_MONOTONIC, &timer->timeout);
 	if (err) {
 		logerr("WARNING: clock_gettime() failed: %s\n",
 		       strerror(errno));
@@ -215,15 +165,15 @@ int sleeptimer_wait_next(void)
 		return -ENOENT;
 
 	while (1) {
-		err = timer_clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME,
-					    &timeout, NULL);
+		err = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME,
+				      &timeout, NULL);
 		if (!err)
 			break;
-		if (errno == EAGAIN)
+		if (err == EAGAIN)
 			continue;
-		if (errno != EINTR) {
+		if (err != EINTR) {
 			logerr("WARNING: clock_nanosleep() failed: %s\n",
-			       strerror(errno));
+			       strerror(err));
 			break;
 		}
 	}
