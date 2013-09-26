@@ -1,6 +1,5 @@
 CXX		?= g++
 MOC		?= moc-qt4
-STRIP		?= strip
 INSTALL		?= install
 
 QT_INCDIR	?= /usr/include
@@ -28,7 +27,6 @@ Q		= $(V:1=)
 QUIET_CXX	= $(Q:@=@echo '     CXX      '$@;)$(CXX)
 QUIET_DEPEND	= $(Q:@=@echo '     DEPEND   '$@;)$(CXX)
 QUIET_MOC	= $(Q:@=@echo '     MOC      '$@;)$(MOC)
-QUIET_STRIP	= $(Q:@=@echo '     STRIP    '$@;)$(STRIP)
 
 DEPS		= $(patsubst %.cpp,dep/%.d,$(1))
 OBJS		= $(patsubst %.cpp,obj/%.o,$(1))
@@ -57,7 +55,6 @@ all: $(BIN)
 
 $(BIN): $(call OBJS,$(SRCS))
 	$(QUIET_CXX) $(CXXFLAGS) -o $(BIN) $(LDFLAGS) $(LIBS) $(call OBJS,$(SRCS))
-	$(QUIET_STRIP) $(BIN)
 
 clean:
 	rm -Rf dep obj moc core *~ $(BIN)

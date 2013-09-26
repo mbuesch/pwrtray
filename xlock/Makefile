@@ -1,5 +1,4 @@
 CC		?= gcc
-STRIP		?= strip
 INSTALL		?= install
 
 CFLAGS		+= -g -Os -Wall
@@ -17,7 +16,6 @@ V		= @             # Verbose build:  make V=1
 Q		= $(V:1=)
 QUIET_CC	= $(Q:@=@echo '     CC       '$@;)$(CC)
 QUIET_DEPEND	= $(Q:@=@echo '     DEPEND   '$@;)$(CC)
-QUIET_STRIP	= $(Q:@=@echo '     STRIP    '$@;)$(STRIP)
 
 DEPS		= $(patsubst %.c,dep/%.d,$(1))
 OBJS		= $(patsubst %.c,obj/%.o,$(1))
@@ -42,7 +40,6 @@ all: $(BIN)
 
 $(BIN): $(call OBJS,$(SRCS))
 	$(QUIET_CC) $(CFLAGS) -o $(BIN) $(LDFLAGS) $(LIBS) $(call OBJS,$(SRCS))
-	$(QUIET_STRIP) $(BIN)
 
 clean:
 	rm -Rf dep obj core *~ $(BIN)
