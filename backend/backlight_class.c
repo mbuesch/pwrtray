@@ -16,6 +16,8 @@
 #include "fileaccess.h"
 #include "log.h"
 #include "util.h"
+#include "conf.h"
+#include "main.h"
 
 #include <string.h>
 #include <limits.h>
@@ -103,26 +105,40 @@ static void backlight_class_destroy(struct backlight *b)
 	free(bc);
 }
 
-static char * backlight_select_sysfs_dir(struct list_head *dir_entries)
+static const char * backlight_select_sysfs_dir(struct list_head *dir_entries)
 {
 	struct dir_entry *ent;
+	const char *prefer_dir, *selection = NULL;
 
-	/* Prefer acpi_video. */
-	list_for_each_entry(ent, dir_entries, list) {
-		if (!(ent->type & (DT_LNK | DT_DIR)))
-			continue;
-		if (strncmp(ent->name, "acpi_video", 10) == 0)
-			return ent->name;
+	/* Use the preferred device, if any. */
+	prefer_dir = config_get(backend.config,
+				"BACKLIGHT_CLASS",
+				"prefer_device",
+				NULL);
+	if (prefer_dir) {
+		list_for_each_entry(ent, dir_entries, list) {
+			if ((ent->type & (DT_LNK | DT_DIR)) &&
+			    strcmp(ent->name, prefer_dir) == 0) {
+				selection = ent->name;
+				break;
+			}
+		}
+		if (!selection) {
+			logerr("class backlight: Failed to find preferred "
+			       "device '%s'\n", prefer_dir);
+		}
+	}
+	if (!selection) {
+		/* Return first entry, otherwise. */
+		list_for_each_entry(ent, dir_entries, list) {
+			if (ent->type & (DT_LNK | DT_DIR)) {
+				selection = ent->name;
+				break;
+			}
+		}
 	}
 
-	/* Return first entry, otherwise. */
-	list_for_each_entry(ent, dir_entries, list) {
-		if (!(ent->type & (DT_LNK | DT_DIR)))
-			continue;
-		return ent->name;
-	}
-
-	return NULL;
+	return selection;
 }
 
 static struct backlight * backlight_class_probe(void)

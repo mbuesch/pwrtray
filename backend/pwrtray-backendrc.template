@@ -15,6 +15,11 @@ autodim_default_on=Yes
 # This effectively disables autodim if not on battery power.
 autodim_max_on_ac=Yes
 
+[BACKLIGHT_CLASS]
+# The backlight class device under /sys/class/backlight/ to prefer
+# for managing the backlight brightness.
+prefer_device=acpi_video0
+
 [SCREEN]
 # Framebuffer device for screen blanking
 #fbdev=/dev/fb0
