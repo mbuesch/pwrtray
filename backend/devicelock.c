@@ -26,7 +26,6 @@ struct devicelock * devicelock_probe(void)
 	const struct probe *probe;
 
 	for_each_probe(probe, devicelock) {
-		logverbose("devicelock: Probing %p\n", probe);
 		s = probe->func();
 		if (s) {
 			logdebug("Initialized devicelock driver \"%s\"\n",

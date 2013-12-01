@@ -173,7 +173,6 @@ struct backlight * backlight_probe(void)
 	const struct probe *probe;
 
 	for_each_probe(probe, backlight) {
-		logverbose("backlight: Probing %p\n", probe);
 		b = probe->func();
 		if (b) {
 			fbblank_init(b);

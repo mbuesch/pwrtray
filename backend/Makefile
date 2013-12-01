@@ -33,7 +33,7 @@ DLOCK_MODULES	:=		\
 	devicelock_dummy.c
 
 SRCS		:= main.c timer.c log.c args.c conf.c util.c fileaccess.c \
-		  autodim.c x11lock.c xevrep.c \
+		  autodim.c x11lock.c xevrep.c probe.c \
 		  battery.c $(BAT_MODULES) \
 		  backlight.c $(BL_MODULES) \
 		  devicelock.c $(DLOCK_MODULES)

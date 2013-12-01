@@ -107,7 +107,6 @@ struct battery * battery_probe(void)
 	const struct probe *probe;
 
 	for_each_probe(probe, battery) {
-		logverbose("battery: Probing %p\n", probe);
 		b = probe->func();
 		if (b) {
 			battery_start(b);
