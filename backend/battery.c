@@ -34,6 +34,21 @@ static int default_charger_enable(struct battery *b, int enable)
 
 static int default_charging(struct battery *b)
 {
+	int on_ac = b->on_ac(b);
+	int min_level = b->min_level(b);
+	int max_level = b->max_level(b);
+	int level = b->charge_level(b);
+	int range;
+
+	if (on_ac < 0)
+		return -1;
+	range = max_level - min_level;
+	if (range <= 0)
+		return -1;
+	level = max(0, level - min_level);
+	if (level * 100 / range < 95)
+		return 1;
+
 	return 0;
 }
 
@@ -192,9 +207,18 @@ static void battery_emergency_check(struct battery *b)
 
 int battery_fill_pt_message_stat(struct battery *b, struct pt_message *msg)
 {
+	int on_ac = b->on_ac(b);
+	int charging = b->charging(b);
+
 	msg->bat_stat.flags = 0;
-	if (b->on_ac(b))
+	if (on_ac > 0)
 		msg->bat_stat.flags |= htonl(PT_BAT_FLG_ONAC);
+	else if (on_ac < 0)
+		msg->bat_stat.flags |= htonl(PT_BAT_FLG_ACUNKNOWN);
+	if (charging > 0)
+		msg->bat_stat.flags |= htonl(PT_BAT_FLG_CHARGING);
+	else if (charging < 0)
+		msg->bat_stat.flags |= htonl(PT_BAT_FLG_CHUNKNOWN);
 	msg->bat_stat.min_level = htonl(b->min_level(b));
 	msg->bat_stat.max_level = htonl(b->max_level(b));
 	msg->bat_stat.level = htonl(b->charge_level(b));

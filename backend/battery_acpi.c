@@ -31,16 +31,20 @@ static int battery_acpi_update(struct battery *b)
 	int value, err, value_changed = 0;
 	struct fileaccess *file;
 
-	file = sysfs_file_open(O_RDONLY, ba->ac_online_filename);
-	if (!file) {
-		logerr("WARNING: Failed to open ac/online file\n");
-		return -ETXTBSY;
-	}
-	err = file_read_int(file, &value, 10);
-	file_close(file);
-	if (err) {
-		logerr("WARNING: Failed to read ac/online file\n");
-		return -ETXTBSY;
+	if (strempty(ba->ac_online_filename)) {
+		value = -1;
+	} else {
+		file = sysfs_file_open(O_RDONLY, ba->ac_online_filename);
+		if (!file) {
+			logerr("WARNING: Failed to open ac/online file\n");
+			return -ETXTBSY;
+		}
+		err = file_read_int(file, &value, 10);
+		file_close(file);
+		if (err) {
+			logerr("WARNING: Failed to read ac/online file\n");
+			return -ETXTBSY;
+		}
 	}
 	if (value != ba->on_ac) {
 		ba->on_ac = value;
@@ -115,20 +119,13 @@ static void battery_acpi_destroy(struct battery *b)
 	free(ba);
 }
 
-static struct battery * battery_acpi_probe(void)
+static void find_ac_file(char *ac_file, size_t ac_file_size)
 {
-	struct battery_acpi *ba;
 	LIST_HEAD(dentries);
 	struct dir_entry *dentry;
-	char ac_file[PATH_MAX + 1] = { 0, };
-	char full_file[PATH_MAX + 1] = { 0, };
-	char now_file[PATH_MAX + 1] = { 0, };
 	int res, ok;
 
-	/* Init base directories. */
-	strncat(ac_file, AC_BASEDIR, sizeof(ac_file) - strlen(ac_file) - 1);
-	strncat(full_file, BATT_BASEDIR, sizeof(full_file) - strlen(full_file) - 1);
-	strncat(now_file, BATT_BASEDIR, sizeof(now_file) - strlen(now_file) - 1);
+	strncat(ac_file, AC_BASEDIR, ac_file_size - strlen(ac_file) - 1);
 
 	/* Find the AC-online file */
 	res = list_sysfs_directory(&dentries, ac_file);
@@ -138,9 +135,9 @@ static struct battery * battery_acpi_probe(void)
 	list_for_each_entry(dentry, &dentries, list) {
 		if (dentry->type == DT_LNK &&
 		    strncmp(dentry->name, "ACPI", 4) == 0) {
-			strncat(ac_file, "/", sizeof(ac_file) - strlen(ac_file) - 1);
-			strncat(ac_file, dentry->name, sizeof(ac_file) - strlen(ac_file) - 1);
-			strncat(ac_file, "/power_supply", sizeof(ac_file) - strlen(ac_file) - 1);
+			strncat(ac_file, "/", ac_file_size - strlen(ac_file) - 1);
+			strncat(ac_file, dentry->name, ac_file_size - strlen(ac_file) - 1);
+			strncat(ac_file, "/power_supply", ac_file_size - strlen(ac_file) - 1);
 			ok = 1;
 			break;
 		}
@@ -155,9 +152,9 @@ static struct battery * battery_acpi_probe(void)
 	list_for_each_entry(dentry, &dentries, list) {
 		if (dentry->type == DT_DIR &&
 		    strncmp(dentry->name, "AC", 2) == 0) {
-			strncat(ac_file, "/", sizeof(ac_file) - strlen(ac_file) - 1);
-			strncat(ac_file, dentry->name, sizeof(ac_file) - strlen(ac_file) - 1);
-			strncat(ac_file, "/online", sizeof(ac_file) - strlen(ac_file) - 1);
+			strncat(ac_file, "/", ac_file_size - strlen(ac_file) - 1);
+			strncat(ac_file, dentry->name, ac_file_size - strlen(ac_file) - 1);
+			strncat(ac_file, "/online", ac_file_size - strlen(ac_file) - 1);
 			ok = 1;
 			break;
 		}
@@ -165,6 +162,19 @@ static struct battery * battery_acpi_probe(void)
 	dir_entries_free(&dentries);
 	if (!ok)
 		goto error;
+
+	return;
+error:
+	ac_file[0] = '\0';
+}
+
+static void find_battery_full_file(char *full_file, size_t full_file_size)
+{
+	LIST_HEAD(dentries);
+	struct dir_entry *dentry;
+	int res, ok;
+
+	strncat(full_file, BATT_BASEDIR, full_file_size - strlen(full_file) - 1);
 
 	/* Find the battery-full file */
 	res = list_sysfs_directory(&dentries, full_file);
@@ -174,9 +184,9 @@ static struct battery * battery_acpi_probe(void)
 	list_for_each_entry(dentry, &dentries, list) {
 		if (dentry->type == DT_LNK &&
 		    strncmp(dentry->name, "PNP", 3) == 0) {
-			strncat(full_file, "/", sizeof(full_file) - strlen(full_file) - 1);
-			strncat(full_file, dentry->name, sizeof(full_file) - strlen(full_file) - 1);
-			strncat(full_file, "/power_supply", sizeof(full_file) - strlen(full_file) - 1);
+			strncat(full_file, "/", full_file_size - strlen(full_file) - 1);
+			strncat(full_file, dentry->name, full_file_size - strlen(full_file) - 1);
+			strncat(full_file, "/power_supply", full_file_size - strlen(full_file) - 1);
 			ok = 1;
 			break;
 		}
@@ -191,8 +201,8 @@ static struct battery * battery_acpi_probe(void)
 	list_for_each_entry(dentry, &dentries, list) {
 		if (dentry->type == DT_DIR &&
 		    strncmp(dentry->name, "BAT", 3) == 0) {
-			strncat(full_file, "/", sizeof(full_file) - strlen(full_file) - 1);
-			strncat(full_file, dentry->name, sizeof(full_file) - strlen(full_file) - 1);
+			strncat(full_file, "/", full_file_size - strlen(full_file) - 1);
+			strncat(full_file, dentry->name, full_file_size - strlen(full_file) - 1);
 			ok = 1;
 			break;
 		}
@@ -208,8 +218,8 @@ static struct battery * battery_acpi_probe(void)
 		if (dentry->type == DT_REG &&
 		    (strcmp(dentry->name, "charge_full") == 0 ||
 		     strcmp(dentry->name, "energy_full") == 0)) {
-			strncat(full_file, "/", sizeof(full_file) - strlen(full_file) - 1);
-			strncat(full_file, dentry->name, sizeof(full_file) - strlen(full_file) - 1);
+			strncat(full_file, "/", full_file_size - strlen(full_file) - 1);
+			strncat(full_file, dentry->name, full_file_size - strlen(full_file) - 1);
 			ok = 1;
 			break;
 		}
@@ -217,6 +227,19 @@ static struct battery * battery_acpi_probe(void)
 	dir_entries_free(&dentries);
 	if (!ok)
 		goto error;
+
+	return;
+error:
+	full_file[0] = '\0';
+}
+
+static void find_battery_now_file(char *now_file, size_t now_file_size)
+{
+	LIST_HEAD(dentries);
+	struct dir_entry *dentry;
+	int res, ok;
+
+	strncat(now_file, BATT_BASEDIR, now_file_size - strlen(now_file) - 1);
 
 	/* Find the battery-now file */
 	res = list_sysfs_directory(&dentries, now_file);
@@ -226,9 +249,9 @@ static struct battery * battery_acpi_probe(void)
 	list_for_each_entry(dentry, &dentries, list) {
 		if (dentry->type == DT_LNK &&
 		    strncmp(dentry->name, "PNP", 3) == 0) {
-			strncat(now_file, "/", sizeof(now_file) - strlen(now_file) - 1);
-			strncat(now_file, dentry->name, sizeof(now_file) - strlen(now_file) - 1);
-			strncat(now_file, "/power_supply", sizeof(now_file) - strlen(now_file) - 1);
+			strncat(now_file, "/", now_file_size - strlen(now_file) - 1);
+			strncat(now_file, dentry->name, now_file_size - strlen(now_file) - 1);
+			strncat(now_file, "/power_supply", now_file_size - strlen(now_file) - 1);
 			ok = 1;
 			break;
 		}
@@ -243,8 +266,8 @@ static struct battery * battery_acpi_probe(void)
 	list_for_each_entry(dentry, &dentries, list) {
 		if (dentry->type == DT_DIR &&
 		    strncmp(dentry->name, "BAT", 3) == 0) {
-			strncat(now_file, "/", sizeof(now_file) - strlen(now_file) - 1);
-			strncat(now_file, dentry->name, sizeof(now_file) - strlen(now_file) - 1);
+			strncat(now_file, "/", now_file_size - strlen(now_file) - 1);
+			strncat(now_file, dentry->name, now_file_size - strlen(now_file) - 1);
 			ok = 1;
 			break;
 		}
@@ -260,14 +283,32 @@ static struct battery * battery_acpi_probe(void)
 		if (dentry->type == DT_REG &&
 		    (strcmp(dentry->name, "charge_now") == 0 ||
 		     strcmp(dentry->name, "energy_now") == 0)) {
-			strncat(now_file, "/", sizeof(now_file) - strlen(now_file) - 1);
-			strncat(now_file, dentry->name, sizeof(now_file) - strlen(now_file) - 1);
+			strncat(now_file, "/", now_file_size - strlen(now_file) - 1);
+			strncat(now_file, dentry->name, now_file_size - strlen(now_file) - 1);
 			ok = 1;
 			break;
 		}
 	}
 	dir_entries_free(&dentries);
 	if (!ok)
+		goto error;
+
+	return;
+error:
+	now_file[0] = '\0';
+}
+
+static struct battery * battery_acpi_probe(void)
+{
+	struct battery_acpi *ba;
+	char ac_file[PATH_MAX + 1] = { 0, };
+	char full_file[PATH_MAX + 1] = { 0, };
+	char now_file[PATH_MAX + 1] = { 0, };
+
+	find_ac_file(ac_file, sizeof(ac_file));
+	find_battery_full_file(full_file, sizeof(full_file));
+	find_battery_now_file(now_file, sizeof(now_file));
+	if (strempty(full_file) || strempty(now_file))
 		goto error;
 
 	ba = zalloc(sizeof(*ba));

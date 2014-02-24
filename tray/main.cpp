@@ -151,7 +151,9 @@ void TrayWindow::updateBattBar(struct pt_message *msg)
 		curval = 0;
 		battText = "No bat. info";
 	} else {
-		if (msg->bat_stat.flags & htonl(PT_BAT_FLG_ONAC))
+		if (msg->bat_stat.flags & htonl(PT_BAT_FLG_ACUNKNOWN))
+			battText = "Bat. (Unknown AC):";
+		else if (msg->bat_stat.flags & htonl(PT_BAT_FLG_ONAC))
 			battText = "Bat. (AC):";
 		else
 			battText = "Bat.:";

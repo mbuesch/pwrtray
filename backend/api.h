@@ -35,6 +35,9 @@ enum {
 
 /* (struct pt_message *)->bat_stat.flags */
 #define PT_BAT_FLG_ONAC		(1 << 0) /* On AC */
+#define PT_BAT_FLG_ACUNKNOWN	(1 << 1) /* AC status unknown */
+#define PT_BAT_FLG_CHARGING	(1 << 2) /* Currently charging */
+#define PT_BAT_FLG_CHUNKNOWN	(1 << 3) /* Charging status unknown */
 
 /* (struct pt_message *)->bl_stat.flags */
 #define PT_BL_FLG_AUTODIM	(1 << 0) /* Auto dimming enabled */
