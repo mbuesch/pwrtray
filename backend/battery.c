@@ -170,7 +170,8 @@ static void battery_emergency_check(struct battery *b)
 	min_level = b->min_level(b);
 	max_level = b->max_level(b);
 	level = b->charge_level(b);
-	if (min_level < 0 || max_level < 0 || level < 0)
+	if (min_level < 0 || max_level < 0 || level < 0 ||
+	    max_level <= min_level)
 		return;
 
 	/* To percent */
