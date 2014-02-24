@@ -130,7 +130,7 @@ void TrayWindow::updateBattBar(struct pt_message *msg)
 	int err;
 	unsigned int minval, maxval, curval;
 	unsigned int range, percent;
-	const char *battText;
+	QString battText("No bat. info");
 
 	if (!msg) {
 		err = tray->getBackend()->getBatteryState(&m);
@@ -149,14 +149,17 @@ void TrayWindow::updateBattBar(struct pt_message *msg)
 		minval = 0;
 		maxval = 1;
 		curval = 0;
-		battText = "No bat. info";
 	} else {
+		battText = "Bat.";
 		if (msg->bat_stat.flags & htonl(PT_BAT_FLG_ACUNKNOWN))
-			battText = "Bat. (Unknown AC):";
+			battText += " / AC?";
 		else if (msg->bat_stat.flags & htonl(PT_BAT_FLG_ONAC))
-			battText = "Bat. (AC):";
-		else
-			battText = "Bat.:";
+			battText += " / AC";
+		if (msg->bat_stat.flags & htonl(PT_BAT_FLG_CHUNKNOWN))
+			battText += " / charging?";
+		else if (msg->bat_stat.flags & htonl(PT_BAT_FLG_CHARGING))
+			battText += " / charging";
+		battText += ":";
 	}
 	battBar->setMinimum(minval);
 	battBar->setMaximum(maxval);
