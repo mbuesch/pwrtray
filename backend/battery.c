@@ -46,7 +46,7 @@ static int default_charging(struct battery *b)
 	if (range <= 0)
 		return -1;
 	level = max(0, level - min_level);
-	if (level * 100 / range < 95)
+	if ((int64_t)level * 100 / range < 95)
 		return 1;
 
 	return 0;
