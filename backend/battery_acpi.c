@@ -76,6 +76,7 @@ static int battery_acpi_update(struct battery *b)
 			return -ETXTBSY;
 		}
 	}
+	value = min(value, ba->charge_max);
 	if (value != ba->charge_now) {
 		ba->charge_now = value;
 		value_changed = 1;
