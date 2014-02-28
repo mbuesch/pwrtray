@@ -22,6 +22,24 @@
 #include <errno.h>
 
 
+static int battery_get_charge_percent(struct battery *b)
+{
+	int min_level = b->min_level(b);
+	int max_level = b->max_level(b);
+	int level = b->charge_level(b);
+	int range, percent;
+
+	if (min_level < 0 || max_level < 0 || level < 0 ||
+	    max_level <= min_level)
+		return -1;
+
+	range = max_level - min_level;
+	level = max(0, level - min_level);
+	percent = (int64_t)level * 100 / range;
+
+	return percent;
+}
+
 static int default_on_ac(struct battery *b)
 {
 	return 0;
@@ -35,21 +53,13 @@ static int default_charger_enable(struct battery *b, int enable)
 static int default_charging(struct battery *b)
 {
 	int on_ac = b->on_ac(b);
-	int min_level = b->min_level(b);
-	int max_level = b->max_level(b);
-	int level = b->charge_level(b);
-	int range;
+	int percent;
 
-	if (on_ac < 0)
+	percent = battery_get_charge_percent(b);
+	if (on_ac < 0 || percent < 0)
 		return -1;
-	range = max_level - min_level;
-	if (range <= 0)
-		return -1;
-	level = max(0, level - min_level);
-	if ((int64_t)level * 100 / range < 95)
-		return 1;
 
-	return 0;
+	return on_ac && percent < 95;
 }
 
 static int default_min_level(struct battery *b)
@@ -143,15 +153,17 @@ void battery_destroy(struct battery *b)
 
 static void battery_emergency_check(struct battery *b)
 {
-	int threshold, level, min_level, max_level;
+	int percent, threshold;
 	int on_ac, charging;
 	const char *command;
 	pid_t pid;
 
 	threshold = config_get_int(backend.config, "BATTERY",
 				   "emergency_threshold", 0);
-	if (threshold <= 0)
+	if (threshold <= 0) {
+		/* Check disabled. */
 		return;
+	}
 	threshold = min(threshold, 95);
 
 	on_ac = b->on_ac(b);
@@ -167,17 +179,11 @@ static void battery_emergency_check(struct battery *b)
 		return;
 	}
 
-	min_level = b->min_level(b);
-	max_level = b->max_level(b);
-	level = b->charge_level(b);
-	if (min_level < 0 || max_level < 0 || level < 0 ||
-	    max_level <= min_level)
+	percent = battery_get_charge_percent(b);
+	if (percent < 0)
 		return;
 
-	/* To percent */
-	level = (int64_t)(level - min_level) * 100 / (max_level - min_level);
-
-	if (level > threshold) {
+	if (percent > threshold) {
 		/* No emergency status */
 		b->emergency_handled = 0;
 		return;
@@ -186,7 +192,7 @@ static void battery_emergency_check(struct battery *b)
 		return;
 
 	loginfo("Battery emergency threshold reached. (level=%d%% <= threshold=%d%%)\n",
-		level, threshold);
+		percent, threshold);
 
 	b->emergency_handled = 1;
 
