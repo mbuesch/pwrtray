@@ -659,24 +659,20 @@ error:
 int main(int argc, char **argv)
 {
 	int err;
-	pid_t pid;
 
 	err = parse_commandline(argc, argv);
 	if (err)
 		return (err < 0) ? 1 : 0;
 
 	if (cmdargs.background) {
-		pid = fork();
-		if (pid == 0) /* child */
-			return mainloop();
-		if (pid > 0) {
-			logdebug("Forked background process pid=%lu\n",
-				 (unsigned long)pid);
-			return 0;
+		err = daemon(0, 0);
+		if (err) {
+			logerr("Failed to fork into background: %s\n",
+			       strerror(errno));
+			return 1;
 		}
-		logerr("Failed to fork into background: %s\n",
-		       strerror(errno));
-		return 1;
+		/* We are in the child process. */
+		return mainloop();
 	}
 
 	return mainloop();
