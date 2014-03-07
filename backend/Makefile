@@ -18,6 +18,7 @@ BIN		:= pwrtray-backend
 BAT_MODULES	:=		\
 	battery_powerbook.c	\
 	battery_n810.c		\
+	battery_class.c		\
 	battery_acpi.c		\
 	battery_dummy.c
 
