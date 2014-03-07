@@ -5,7 +5,7 @@ INSTALL		?= install
 QT_INCDIR	?= /usr/include
 QT_LIBDIR	?= /usr/lib
 
-CXXFLAGS	+= -g -Os -Wall -fno-exceptions \
+CXXFLAGS	+= -g -O2 -flto -fno-exceptions -Wall \
 		   -I$(QT_INCDIR) \
 		   -I$(QT_INCDIR)/QtCore \
 		   -I$(QT_INCDIR)/QtGui \
