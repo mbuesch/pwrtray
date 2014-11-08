@@ -34,21 +34,23 @@ enum {
 };
 
 /* (struct pt_message *)->bat_stat.flags */
-#define PT_BAT_FLG_ONAC		(1 << 0) /* On AC */
-#define PT_BAT_FLG_ACUNKNOWN	(1 << 1) /* AC status unknown */
-#define PT_BAT_FLG_CHARGING	(1 << 2) /* Currently charging */
-#define PT_BAT_FLG_CHUNKNOWN	(1 << 3) /* Charging status unknown */
+#define PT_BAT_FLG_ONAC			(1 << 0) /* On AC */
+#define PT_BAT_FLG_ACUNKNOWN		(1 << 1) /* AC status unknown */
+#define PT_BAT_FLG_CHARGING		(1 << 2) /* Currently charging */
+#define PT_BAT_FLG_CHUNKNOWN		(1 << 3) /* Charging status unknown */
 
 /* (struct pt_message *)->bl_stat.flags */
-#define PT_BL_FLG_AUTODIM	(1 << 0) /* Auto dimming enabled */
+#define PT_BL_FLG_AUTODIM		(1 << 0) /* Auto dimming enabled */
+#define PT_BL_FLG_AUTODIM_AC		(1 << 1) /* Auto dimming enabled on AC */
 
 /* (struct pt_message *)->bl_autodim.flags */
-#define PT_AUTODIM_FLG_ENABLE	(1 << 0) /* Auto dimming enable */
+#define PT_AUTODIM_FLG_ENABLE		(1 << 0) /* Auto dimming enable */
+#define PT_AUTODIM_FLG_ENABLE_AC	(1 << 1) /* Auto dimming enable on AC */
 
 /* (struct pt_message *)->flags */
-#define PT_FLG_REPLY		(1 << 0) /* This is a reply to a previous message */
-#define PT_FLG_OK		(1 << 1) /* There was no error */
-#define PT_FLG_ENABLE		(1 << 2) /* Generic boolean flag */
+#define PT_FLG_REPLY			(1 << 0) /* This is a reply to a previous message */
+#define PT_FLG_OK			(1 << 1) /* There was no error */
+#define PT_FLG_ENABLE			(1 << 2) /* Generic boolean flag */
 
 struct pt_message {
 	uint16_t id;

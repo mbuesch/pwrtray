@@ -75,10 +75,14 @@ static int send_message(struct client *c, struct pt_message *msg, uint16_t flags
 	return 0;
 }
 
-static int enable_autodim(int max_percent)
+static int enable_autodim(int max_percent, int enable_on_ac)
 {
 	int err = 0;
 
+	if (!backend.backlight)
+		return -ENODEV;
+
+	backend.backlight->autodim_enabled_on_ac = enable_on_ac;
 	if (!backend.autodim) {
 		err = -ENOMEM;
 		backend.autodim = autodim_alloc();
@@ -100,6 +104,8 @@ static void disable_autodim(void)
 	autodim_destroy(backend.autodim);
 	autodim_free(backend.autodim);
 	backend.autodim = NULL;
+	if (backend.backlight)
+		backend.backlight->autodim_enabled_on_ac = 0;
 }
 
 static void received_message(struct client *c, struct pt_message *msg)
@@ -142,10 +148,12 @@ static void received_message(struct client *c, struct pt_message *msg)
 		break;
 	case PTREQ_BL_AUTODIM:
 		err = 0;
-		if (msg->bl_autodim.flags & htonl(PT_AUTODIM_FLG_ENABLE))
-			err = enable_autodim(htonl(msg->bl_autodim.max_percent));
-		else
+		if (msg->bl_autodim.flags & htonl(PT_AUTODIM_FLG_ENABLE)) {
+			err = enable_autodim(htonl(msg->bl_autodim.max_percent),
+					     !!(msg->bl_autodim.flags & htonl(PT_AUTODIM_FLG_ENABLE_AC)));
+		} else {
 			disable_autodim();
+		}
 		reply.error.code = htonl(err);
 		send_message(c, &reply, err ? 0 : PT_FLG_OK);
 		break;
@@ -590,7 +598,7 @@ static int set_niceness(void)
 
 int mainloop(void)
 {
-	int err, value;
+	int err, value, on_ac;
 	unsigned int timer_errors = 0;
 
 	log_initialize();
@@ -616,7 +624,9 @@ int mainloop(void)
 	if (config_get_bool(backend.config, "BACKLIGHT", "autodim_default_on", 0)) {
 		value = config_get_int(backend.config, "BACKLIGHT",
 				       "autodim_default_max", 100);
-		if (enable_autodim(value))
+		on_ac = config_get_bool(backend.config, "BACKLIGHT",
+					"autodim_default_on_ac", 0);
+		if (enable_autodim(value, on_ac))
 			logerr("Failed to initially enable autodimming\n");
 	}
 	backend.devicelock = devicelock_probe();

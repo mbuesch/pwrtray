@@ -45,6 +45,7 @@ protected:
 	QLabel *battLabel;
 	QSlider *brightness;
 	QCheckBox *brAutoAdj;
+	QCheckBox *brAutoAdjAC;
 	bool blockBrightnessChange;
 	int defaultAutodimMax;
 };

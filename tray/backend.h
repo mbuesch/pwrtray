@@ -19,7 +19,7 @@ public:
 	int getBatteryState(struct pt_message *msg);
 	int getBacklightState(struct pt_message *msg);
 	int setBacklight(int value);
-	int setBacklightAutodim(bool enable, int max_percent);
+	int setBacklightAutodim(bool enable, bool enable_on_ac, int max_percent);
 
 signals:
 	void backlightStateChanged(struct pt_message *msg);

@@ -11,9 +11,8 @@ autodim_smooth=Yes
 autodim_default_max=90
 # Enable auto-dimming by default?
 autodim_default_on=Yes
-# Force backlight to autodim-max, if on AC and autodim is enabled?
-# This effectively disables autodim if not on battery power.
-autodim_max_on_ac=Yes
+# Enable auto-dimming by default, if on AC power?
+autodim_default_on_ac=No
 
 [BACKLIGHT_CLASS]
 # The backlight class device under /sys/class/backlight/ to prefer

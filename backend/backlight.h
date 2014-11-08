@@ -23,6 +23,7 @@ struct backlight {
 
 	/* Internal */
 	int autodim_enabled;
+	int autodim_enabled_on_ac;
 	int framebuffer_fd;
 	int fb_blanked;
 	struct sleeptimer timer;

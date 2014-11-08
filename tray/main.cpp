@@ -49,15 +49,18 @@ TrayWindow::TrayWindow(TrayIcon *_tray)
 	l->addWidget(label, 0, 0);
 	brightness = new QSlider(this);
 	brightness->setOrientation(Qt::Horizontal);
-	l->addWidget(brightness, 0, 1);
+	l->addWidget(brightness, 0, 1, 1, 2);
 
-	brAutoAdj = new QCheckBox("Auto brightness", this);
+	brAutoAdj = new QCheckBox("Auto", this);
 	l->addWidget(brAutoAdj, 1, 1);
+
+	brAutoAdjAC = new QCheckBox("Auto on AC", this);
+	l->addWidget(brAutoAdjAC, 1, 2);
 
 	battLabel = new QLabel(this);
 	l->addWidget(battLabel, 3, 0);
 	battBar = new QProgressBar(this);
-	l->addWidget(battBar, 3, 1);
+	l->addWidget(battBar, 3, 1, 1, 2);
 
 	update();
 
@@ -66,7 +69,9 @@ TrayWindow::TrayWindow(TrayIcon *_tray)
 		cerr << "Failed to fetch initial backlight state" << endl;
 	} else {
 		bool autodim = !!(m.bl_stat.flags & htonl(PT_BL_FLG_AUTODIM));
+		bool autoac = !!(m.bl_stat.flags & htonl(PT_BL_FLG_AUTODIM_AC));
 		brAutoAdj->setCheckState(autodim ? Qt::Checked : Qt::Unchecked);
+		brAutoAdjAC->setCheckState(autoac ? Qt::Checked : Qt::Unchecked);
 		defaultAutodimMax = ntohl(m.bl_stat.default_autodim_max_percent);
 		if (autodim)
 			brightness->setValue(defaultAutodimMax);
@@ -79,6 +84,8 @@ TrayWindow::TrayWindow(TrayIcon *_tray)
 		this, SLOT(desiredBrightnessChanged(int)));
 
 	connect(brAutoAdj, SIGNAL(stateChanged(int)),
+		this, SLOT(brightnessAutoAdjChanged(int)));
+	connect(brAutoAdjAC, SIGNAL(stateChanged(int)),
 		this, SLOT(brightnessAutoAdjChanged(int)));
 }
 
@@ -97,22 +104,25 @@ void TrayWindow::updateBacklightToolTip(bool autodim)
 void TrayWindow::brightnessAutoAdjChanged(int unused)
 {
 	bool on = (brAutoAdj->checkState() == Qt::Checked);
+	bool on_ac = (brAutoAdjAC->checkState() == Qt::Checked);
 	int err;
 
 	if (blockBrightnessChange)
 		return;
 
 	if (on) {
-		err = tray->getBackend()->setBacklightAutodim(true, -1);
+		err = tray->getBackend()->setBacklightAutodim(true, on_ac, -1);
 		if (err)
 			cerr << "Failed to enable auto-dimming" << endl;
 		blockBrightnessChange = true;
 		brightness->setValue(defaultAutodimMax);
 		blockBrightnessChange = false;
+		brAutoAdjAC->setEnabled(true);
 	} else {
-		err = tray->getBackend()->setBacklightAutodim(false, 0);
+		err = tray->getBackend()->setBacklightAutodim(false, on_ac, 0);
 		if (err)
 			cerr << "Failed to disable auto-dimming" << endl;
+		brAutoAdjAC->setEnabled(false);
 	}
 	updateBacklightSlider();
 	updateBacklightToolTip(on);
@@ -156,9 +166,9 @@ void TrayWindow::updateBattBar(struct pt_message *msg)
 		else if (msg->bat_stat.flags & htonl(PT_BAT_FLG_ONAC))
 			battText += " / AC";
 		if (msg->bat_stat.flags & htonl(PT_BAT_FLG_CHUNKNOWN))
-			battText += " / charging?";
+			battText += " / charg.?";
 		else if (msg->bat_stat.flags & htonl(PT_BAT_FLG_CHARGING))
-			battText += " / charging";
+			battText += " / charg.";
 		battText += ":";
 	}
 	battBar->setMinimum(minval);
@@ -215,13 +225,14 @@ void TrayWindow::updateBacklightSlider(struct pt_message *msg)
 void TrayWindow::desiredBrightnessChanged(int newVal)
 {
 	bool autodim = (brAutoAdj->checkState() == Qt::Checked);
+	bool autodim_ac = (brAutoAdjAC->checkState() == Qt::Checked);
 	int err;
 
 	if (blockBrightnessChange)
 		return;
 
 	if (autodim) {
-		err = tray->getBackend()->setBacklightAutodim(true, newVal);
+		err = tray->getBackend()->setBacklightAutodim(true, autodim_ac, newVal);
 		if (err)
 			cerr << "Failed to set autodim max" << endl;
 	} else {
