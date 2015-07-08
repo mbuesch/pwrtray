@@ -201,7 +201,7 @@ void backlight_destroy(struct backlight *b)
 int backlight_fill_pt_message_stat(struct backlight *b, struct pt_message *msg)
 {
 	int min_brightness, max_brightness, cur_brightness, brightness_step;
-	int autodim_enabled, autodim_ac, autodim_max;
+	int autodim_enabled, autodim_ac;
 
 	min_brightness = b->min_brightness(b);
 	max_brightness = b->max_brightness(b);
@@ -210,18 +210,16 @@ int backlight_fill_pt_message_stat(struct backlight *b, struct pt_message *msg)
 
 	autodim_enabled = b->autodim_enabled;
 	autodim_ac = b->autodim_enabled_on_ac;
-	autodim_max = config_get_int(backend.config, "BACKLIGHT",
-				     "autodim_default_max", 100);
-	autodim_max = clamp(autodim_max, 0, 100);
 
 	if (autodim_enabled) {
-		cur_brightness = (int64_t)cur_brightness * 100 / (max_brightness - min_brightness);
+		cur_brightness = backlight_get_percentage(b);
+		if (cur_brightness < 0)
+			cur_brightness = 100;
 		min_brightness = 0;
 		max_brightness = 100;
 		brightness_step = 1;
 	}
 
-	msg->bl_stat.default_autodim_max_percent = htonl(autodim_max);
 	msg->bl_stat.min_brightness = htonl(min_brightness);
 	msg->bl_stat.max_brightness = htonl(max_brightness);
 	msg->bl_stat.brightness_step = htonl(brightness_step);
@@ -293,11 +291,31 @@ int backlight_set_percentage(struct backlight *b, unsigned int percent)
 	int err, value, range;
 
 	range = bmax - bmin;
-	value = ((int64_t)range * percent / 100) + bmin;
+	value = div_round((int64_t)range * percent, (int64_t)100) + bmin;
 
 	err = backlight_set_brightness(b, value);
 	if (!err)
 		backlight_notify_state_change(b);
 
 	return err;
+}
+
+int backlight_get_percentage(struct backlight *b)
+{
+	int bmin = b->min_brightness(b);
+	int bmax = b->max_brightness(b);
+	int percent, value, range;
+
+	range = bmax - bmin;
+	value = b->current_brightness(b);
+	if (value < 0)
+		return value;
+	value -= bmin;
+	if (value < 0)
+		return -EINVAL;
+
+	percent = div_round((int64_t)value * 100, (int64_t)range);
+	percent = clamp(percent, 0, 100);
+
+	return percent;
 }

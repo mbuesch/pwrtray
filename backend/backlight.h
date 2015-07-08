@@ -39,6 +39,7 @@ int backlight_notify_state_change(struct backlight *b);
 
 int backlight_set_brightness(struct backlight *b, int value);
 int backlight_set_percentage(struct backlight *b, unsigned int percent);
+int backlight_get_percentage(struct backlight *b);
 int backlight_screen_lock(struct backlight *b, int lock);
 
 DECLARE_PROBES(backlight);
