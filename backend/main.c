@@ -622,8 +622,9 @@ int mainloop(void)
 	if (!backend.backlight)
 		goto error;
 	if (config_get_bool(backend.config, "BACKLIGHT", "autodim_default_on", 0)) {
-		value = config_get_int(backend.config, "BACKLIGHT",
-				       "autodim_default_max", 100);
+		value = backlight_get_percentage(backend.backlight);
+		if (value < 0)
+			value = 100;
 		on_ac = config_get_bool(backend.config, "BACKLIGHT",
 					"autodim_default_on_ac", 0);
 		if (enable_autodim(value, on_ac))
