@@ -62,7 +62,6 @@ struct pt_message {
 			int32_t max_brightness;
 			int32_t brightness_step;
 			int32_t brightness;
-			int32_t default_autodim_max_percent;
 		} PT_PACKED bl_stat;
 		struct { /* Set backlight */
 			int32_t brightness;

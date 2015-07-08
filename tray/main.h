@@ -47,7 +47,7 @@ protected:
 	QCheckBox *brAutoAdj;
 	QCheckBox *brAutoAdjAC;
 	bool blockBrightnessChange;
-	int defaultAutodimMax;
+	int realBrightnessMinVal;
 };
 
 class TrayIcon : public QSystemTrayIcon

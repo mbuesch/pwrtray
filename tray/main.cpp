@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2010-2011 Michael Buesch <m@bues.ch>
+ *   Copyright (C) 2010-2015 Michael Buesch <m@bues.ch>
  *
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License
@@ -14,6 +14,7 @@
 
 #include "main.h"
 #include "backend.h"
+#include "util.h"
 
 #include <QtGui/QApplication>
 #include <QtGui/QMessageBox>
@@ -22,10 +23,6 @@
 
 #include <iostream>
 
-#include <time.h>
-#include <sys/time.h>
-#include <errno.h>
-#include <string.h>
 #include <stdint.h>
 #include <sys/signal.h>
 
@@ -37,7 +34,7 @@ TrayWindow::TrayWindow(TrayIcon *_tray)
  : QMenu(NULL)
  , tray (_tray)
  , blockBrightnessChange (false)
- , defaultAutodimMax(100)
+ , realBrightnessMinVal (0)
 {
 	struct pt_message m;
 	int err;
@@ -72,11 +69,8 @@ TrayWindow::TrayWindow(TrayIcon *_tray)
 		bool autoac = !!(m.bl_stat.flags & htonl(PT_BL_FLG_AUTODIM_AC));
 		brAutoAdj->setCheckState(autodim ? Qt::Checked : Qt::Unchecked);
 		brAutoAdjAC->setCheckState(autoac ? Qt::Checked : Qt::Unchecked);
-		defaultAutodimMax = ntohl(m.bl_stat.default_autodim_max_percent);
-		if (autodim)
-			brightness->setValue(defaultAutodimMax);
-		else
-			brightness->setValue(ntohl(m.bl_stat.brightness));
+		brightness->setValue(ntohl(m.bl_stat.brightness));
+		//TODO slider min/max?
 		updateBacklightToolTip(autodim);
 	}
 
@@ -106,19 +100,24 @@ void TrayWindow::brightnessAutoAdjChanged(int unused)
 	bool on = (brAutoAdj->checkState() == Qt::Checked);
 	bool on_ac = (brAutoAdjAC->checkState() == Qt::Checked);
 	int err;
+	int minval, maxval, val;
 
 	if (blockBrightnessChange)
 		return;
 
 	if (on) {
-		err = tray->getBackend()->setBacklightAutodim(true, on_ac, -1);
+		/* Auto-adjust on */
+		minval = realBrightnessMinVal;
+		maxval = brightness->maximum();
+		val = brightness->value();
+		val = div_round(static_cast<int64_t>(val) * 100,
+				static_cast<int64_t>(maxval - minval));
+		err = tray->getBackend()->setBacklightAutodim(true, on_ac, val);
 		if (err)
 			cerr << "Failed to enable auto-dimming" << endl;
-		blockBrightnessChange = true;
-		brightness->setValue(defaultAutodimMax);
-		blockBrightnessChange = false;
 		brAutoAdjAC->setEnabled(true);
 	} else {
+		/* Auto-adjust off */
 		err = tray->getBackend()->setBacklightAutodim(false, on_ac, 0);
 		if (err)
 			cerr << "Failed to disable auto-dimming" << endl;
@@ -178,7 +177,8 @@ void TrayWindow::updateBattBar(struct pt_message *msg)
 
 	range = maxval - minval;
 	if (range)
-		percent = static_cast<uint64_t>(curval - minval) * 100 / range;
+		percent = div_round(static_cast<uint64_t>(curval - minval) * 100,
+				    static_cast<uint64_t>(range));
 	else
 		percent = 0;
 	tray->setBatteryToolTip(QString("%1 %2%").arg(battText).arg(percent));
@@ -204,11 +204,12 @@ void TrayWindow::updateBacklightSlider(struct pt_message *msg)
 	val = ntohl(msg->bl_stat.brightness);
 	minval = ntohl(msg->bl_stat.min_brightness);
 	maxval = ntohl(msg->bl_stat.max_brightness);
-	/* Force minval to >= 1% */
+	/* Force minval to >= 1%, but save the original minval. */
+	realBrightnessMinVal = minval;
 	if (flags & PT_BL_FLG_AUTODIM)
 		minval = max(minval, 1u);
 	else
-		minval = ((maxval - minval) * 1 / 100) + minval;
+		minval = div_round((maxval - minval) * 1, 100) + minval;
 	minval = round_up(minval, step);
 
 	blockBrightnessChange = true;
@@ -216,8 +217,7 @@ void TrayWindow::updateBacklightSlider(struct pt_message *msg)
 	brightness->setSingleStep(step);
 	brightness->setMinimum(minval);
 	brightness->setMaximum(maxval);
-	if (!(flags & PT_BL_FLG_AUTODIM))
-		brightness->setValue(val);
+	brightness->setValue(val);
 
 	blockBrightnessChange = false;
 }
@@ -320,27 +320,6 @@ void TrayIcon::batteryStateChanged(struct pt_message *msg)
 void TrayIcon::backlightStateChanged(struct pt_message *msg)
 {
 	window->updateBacklightSlider(msg);
-}
-
-static void msleep(unsigned int msecs)
-{
-	int err;
-	struct timespec time;
-
-	time.tv_sec = 0;
-	while (msecs >= 1000) {
-		time.tv_sec++;
-		msecs -= 1000;
-	}
-	time.tv_nsec = msecs;
-	time.tv_nsec *= 1000000;
-	do {
-		err = nanosleep(&time, &time);
-	} while (err && errno == EINTR);
-	if (err) {
-		cerr << "nanosleep() failed with: "
-		     << strerror(errno) << endl;
-	}
 }
 
 static bool waitForSystray()

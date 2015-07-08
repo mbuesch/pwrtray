@@ -20,7 +20,7 @@ DESTDIR		?=
 PREFIX		?= /usr/local
 
 BIN		= pwrtray
-SRCS		= main.cpp backend.cpp
+SRCS		= main.cpp backend.cpp util.cpp
 
 V		= @             # Verbose build:  make V=1
 Q		= $(V:1=)
