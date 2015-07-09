@@ -1,5 +1,5 @@
 /*
- *   Copyright (C) 2010 Michael Buesch <m@bues.ch>
+ *   Copyright (C) 2010-2015 Michael Buesch <m@bues.ch>
  *
  *   This program is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License
@@ -28,6 +28,24 @@
 
 #include <linux/fb.h>
 
+
+static int backlight_set_percentage_no_notify(struct backlight *b,
+					      unsigned int percent)
+{
+	int bmin = b->min_brightness(b);
+	int bmax = b->max_brightness(b);
+	int err, value, range;
+
+	range = bmax - bmin;
+	value = div_round((int64_t)range * percent, (int64_t)100) + bmin;
+
+	/* Set the brightness value. Do not call backlight_set_brightness here,
+	 * because it will update screen blanking, which might not be desired
+	 * here. */
+	err = b->set_brightness(b, value);
+
+	return err;
+}
 
 static int do_framebuffer_blank(int fd, int blank)
 {
@@ -159,12 +177,19 @@ void backlight_init(struct backlight *b, const char *name)
 
 static void backlight_start(struct backlight *b)
 {
+	int percent;
+
 	if (b->poll_interval) {
 		b->update(b);
 		sleeptimer_init(&b->timer, "backlight", backlight_poll_callback);
 		sleeptimer_set_timeout_relative(&b->timer, b->poll_interval);
 		sleeptimer_enqueue(&b->timer);
 	}
+
+	percent = config_get_int(backend.config, "BACKLIGHT",
+				 "startup_percent", 100);
+	percent = clamp(percent, 0, 100);
+	backlight_set_percentage_no_notify(b, percent);
 }
 
 struct backlight * backlight_probe(void)
@@ -189,12 +214,19 @@ struct backlight * backlight_probe(void)
 
 void backlight_destroy(struct backlight *b)
 {
+	int percent;
+
 	if (!b)
 		return;
 
 	fbblank_exit(b);
 	b->screen_lock(b, 0);
-	b->set_brightness(b, b->max_brightness(b));
+
+	percent = config_get_int(backend.config, "BACKLIGHT",
+				 "shutdown_percent", 100);
+	percent = clamp(percent, 0, 100);
+	backlight_set_percentage_no_notify(b, percent);
+
 	b->destroy(b);
 }
 
@@ -286,16 +318,13 @@ int backlight_screen_lock(struct backlight *b, int lock)
 
 int backlight_set_percentage(struct backlight *b, unsigned int percent)
 {
-	int bmin = b->min_brightness(b);
-	int bmax = b->max_brightness(b);
-	int err, value, range;
+	int err;
 
-	range = bmax - bmin;
-	value = div_round((int64_t)range * percent, (int64_t)100) + bmin;
-
-	err = backlight_set_brightness(b, value);
-	if (!err)
+	err = backlight_set_percentage_no_notify(b, percent);
+	if (!err) {
 		backlight_notify_state_change(b);
+		update_screen_blanking(b);
+	}
 
 	return err;
 }
