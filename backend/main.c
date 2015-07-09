@@ -56,8 +56,8 @@ struct backend backend;
 
 static int send_message(struct client *c, struct pt_message *msg, uint16_t flags)
 {
-	int ret;
-	unsigned int count, pos = 0;
+	ssize_t ret;
+	size_t count, pos = 0;
 
 	msg->flags |= htons(flags);
 	count = sizeof(*msg);
@@ -223,18 +223,25 @@ static void force_disconnect_clients(void)
 static void recv_clients(void)
 {
 	struct client *c, *c_tmp;
-	int count;
+	ssize_t count;
+	size_t pos;
 	struct pt_message msg;
 
 	list_for_each_entry_safe(c, c_tmp, &client_list, list) {
-		count = recv(c->fd, &msg, sizeof(msg), 0);
-		if (count < 0)
-			continue;
-		if (count == 0) {
-			remove_client(c);
-			continue;
-		}
+		pos = 0;
+		do {
+			count = recv(c->fd, &msg, sizeof(msg), 0);
+			if (count < 0)
+				goto next_client;
+			if (count == 0) {
+				remove_client(c);
+				goto next_client;
+			}
+			pos += count;
+		} while (pos != sizeof(msg));
 		received_message(c, &msg);
+next_client:
+		continue;
 	}
 }
 

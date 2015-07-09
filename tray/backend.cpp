@@ -43,7 +43,7 @@ Backend::~Backend()
 	int err;
 
 	if (fd != -1) {
-		memset(&msg, 0, sizeof(msg));
+		::memset(&msg, 0, sizeof(msg));
 		msg.id = htons(PTREQ_XEVREP);
 		err = sendMessageSyncReply(&msg);
 		if (err)
@@ -77,7 +77,7 @@ int Backend::connectToBackend()
 		goto err_close;
 	}
 
-	memset(&msg, 0, sizeof(msg));
+	::memset(&msg, 0, sizeof(msg));
 	msg.id = htons(PTREQ_PING);
 	err = sendMessageSyncReply(&msg);
 	if (err) {
@@ -91,7 +91,7 @@ int Backend::connectToBackend()
 	connect(notifier, SIGNAL(activated(int)),
 		this, SLOT(readNotification(int)));
 
-	memset(&msg, 0, sizeof(msg));
+	::memset(&msg, 0, sizeof(msg));
 	msg.id = htons(PTREQ_WANT_NOTIFY);
 	msg.flags = htons(PT_FLG_ENABLE);
 	err = sendMessageSyncReply(&msg);
@@ -100,7 +100,7 @@ int Backend::connectToBackend()
 		goto err_free_noti;
 	}
 
-	memset(&msg, 0, sizeof(msg));
+	::memset(&msg, 0, sizeof(msg));
 	msg.id = htons(PTREQ_XEVREP);
 	msg.flags = htons(PT_FLG_ENABLE);
 	err = sendMessageSyncReply(&msg);
@@ -121,12 +121,18 @@ error:
 
 int Backend::sendMessage(struct pt_message *msg)
 {
-	ssize_t count;
+	ssize_t ret;
+	size_t count, pos = 0;
 
 	msg->flags |= htons(PT_FLG_OK);
-	count = ::write(fd, msg, sizeof(*msg));
-	if (count != sizeof(*msg))
-		return -1;
+	count = sizeof(*msg);
+	while (count) {
+		ret = ::send(fd, ((uint8_t *)msg) + pos, count, 0);
+		if (ret < 0)
+			return -1;
+		count -= ret;
+		pos += ret;
+	}
 
 	return 0;
 }
@@ -166,9 +172,9 @@ int Backend::recvMessage(struct pt_message *msg)
 	ssize_t count;
 	size_t pos = 0;
 
-	memset(msg, 0, sizeof(*msg));
+	::memset(msg, 0, sizeof(*msg));
 	do {
-		count = ::read(fd, ((uint8_t *)msg) + pos, sizeof(*msg) - pos);
+		count = ::recv(fd, ((uint8_t *)msg) + pos, sizeof(*msg) - pos, 0);
 		if (count < 0)
 			return -1;
 		pos += count;
@@ -225,7 +231,7 @@ int Backend::getBatteryState(struct pt_message *msg)
 {
 	int err;
 
-	memset(msg, 0, sizeof(*msg));
+	::memset(msg, 0, sizeof(*msg));
 	msg->id = htons(PTREQ_BAT_GETSTATE);
 	err = sendMessageSyncReply(msg);
 
@@ -236,7 +242,7 @@ int Backend::getBacklightState(struct pt_message *msg)
 {
 	int err;
 
-	memset(msg, 0, sizeof(*msg));
+	::memset(msg, 0, sizeof(*msg));
 	msg->id = htons(PTREQ_BL_GETSTATE);
 	err = sendMessageSyncReply(msg);
 
@@ -247,7 +253,7 @@ int Backend::setBacklight(int value)
 {
 	struct pt_message msg;
 
-	memset(&msg, 0, sizeof(msg));
+	::memset(&msg, 0, sizeof(msg));
 	msg.id = htons(PTREQ_BL_SETBRIGHTNESS);
 	msg.bl_set.brightness = value;
 
@@ -258,7 +264,7 @@ int Backend::setBacklightAutodim(bool enable, bool enable_on_ac, int max_percent
 {
 	struct pt_message msg;
 
-	memset(&msg, 0, sizeof(msg));
+	::memset(&msg, 0, sizeof(msg));
 	msg.id = htons(PTREQ_BL_AUTODIM);
 	msg.bl_autodim.flags = enable ? htonl(PT_AUTODIM_FLG_ENABLE) : 0;
 	msg.bl_autodim.flags |= enable_on_ac ? htonl(PT_AUTODIM_FLG_ENABLE_AC) : 0;
