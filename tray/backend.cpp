@@ -127,7 +127,8 @@ int Backend::sendMessage(struct pt_message *msg)
 	msg->flags |= htons(PT_FLG_OK);
 	count = sizeof(*msg);
 	while (count) {
-		ret = ::send(fd, ((uint8_t *)msg) + pos, count, 0);
+		ret = ::send(fd, reinterpret_cast<uint8_t *>(msg) + pos,
+			     count, 0);
 		if (ret < 0)
 			return -1;
 		count -= ret;
@@ -174,7 +175,8 @@ int Backend::recvMessage(struct pt_message *msg)
 
 	::memset(msg, 0, sizeof(*msg));
 	do {
-		count = ::recv(fd, ((uint8_t *)msg) + pos, sizeof(*msg) - pos, 0);
+		count = ::recv(fd, reinterpret_cast<uint8_t *>(msg) + pos,
+			       sizeof(*msg) - pos, 0);
 		if (count < 0)
 			return -1;
 		pos += count;
