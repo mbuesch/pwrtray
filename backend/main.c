@@ -596,7 +596,7 @@ static int set_niceness(void)
 	return 0;
 }
 
-int mainloop(void)
+static int mainloop(void)
 {
 	int err, value, on_ac;
 	unsigned int timer_errors = 0;
