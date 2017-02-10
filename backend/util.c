@@ -92,19 +92,20 @@ uint_fast8_t tiny_hash(const char *str)
 
 pid_t subprocess_exec(const char *_command)
 {
-	char *command, *command_mem = NULL;
+	char command_buf[4096] = { };
+	char *command;
 	char *argv[32] = { };
 	unsigned int i;
 	long err = 0;
 	pid_t pid;
 
-	command = strdup(_command);
-	if (!command) {
-		logerr("Out of memory!");
-		err = -ENOMEM;
+	if (strlen(_command) >= sizeof(command_buf) - 1) {
+		logerr("subprocess_exec: Command too long");
+		err = -E2BIG;
 		goto out;
 	}
-	command_mem = command;
+	strcpy(command_buf, _command);
+	command = command_buf;
 
 	for (i = 0; i < ARRAY_SIZE(argv) - 1; i++) {
 		argv[i] = command;
@@ -141,11 +142,7 @@ pid_t subprocess_exec(const char *_command)
 		exit(0);
 		while (1);
 	}
-
 	err = pid;
-
 out:
-	free(command_mem);
-
 	return err;
 }
