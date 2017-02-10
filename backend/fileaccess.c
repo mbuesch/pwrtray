@@ -291,10 +291,6 @@ int list_directory(struct list_head *dir_entries, const char *path_fmt, ...)
 	va_list ap;
 	DIR *dir;
 	struct dirent *dirent;
-	union {
-		struct dirent d;
-		char b[offsetof(struct dirent, d_name) + NAME_MAX + 1];
-	} dirent_buf;
 	int err;
 	struct dir_entry *de;
 	int count = 0;
@@ -308,12 +304,14 @@ int list_directory(struct list_head *dir_entries, const char *path_fmt, ...)
 		return -errno;
 	INIT_LIST_HEAD(dir_entries);
 	while (1) {
-		err = readdir_r(dir, &dirent_buf.d, &dirent);
-		if (err)
-			goto error_unwind;
-		if (!dirent)
+		errno = 0;
+		dirent = readdir(dir);
+		if (!dirent) {
+			err = errno;
+			if (err)
+				goto error_unwind;
 			break;
-		dirent->d_name[min(dirent->d_reclen, NAME_MAX)] = '\0';
+		}
 
 		if (strcmp(dirent->d_name, ".") == 0 ||
 		    strcmp(dirent->d_name, "..") == 0)
