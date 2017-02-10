@@ -35,7 +35,10 @@ static int battery_get_charge_percent(struct battery *b)
 
 	range = max_level - min_level;
 	level = max(0, level - min_level);
-	percent = div_round((int64_t)level * 100, (int64_t)range);
+	if (range)
+		percent = div_round((int64_t)level * 100, (int64_t)range);
+	else
+		percent = 0;
 
 	return percent;
 }

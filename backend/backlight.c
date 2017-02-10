@@ -343,7 +343,10 @@ int backlight_get_percentage(struct backlight *b)
 	if (value < 0)
 		return -EINVAL;
 
-	percent = div_round((int64_t)value * 100, (int64_t)range);
+	if (range)
+		percent = div_round((int64_t)value * 100, (int64_t)range);
+	else
+		percent = 0;
 	percent = clamp(percent, 0, 100);
 
 	return percent;

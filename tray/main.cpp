@@ -100,7 +100,7 @@ void TrayWindow::brightnessAutoAdjChanged(int unused)
 	bool on = (brAutoAdj->checkState() == Qt::Checked);
 	bool on_ac = (brAutoAdjAC->checkState() == Qt::Checked);
 	int err;
-	int minval, maxval, val;
+	int minval, maxval, range, val;
 
 	if (blockBrightnessChange)
 		return;
@@ -109,9 +109,13 @@ void TrayWindow::brightnessAutoAdjChanged(int unused)
 		/* Auto-adjust on */
 		minval = realBrightnessMinVal;
 		maxval = brightness->maximum();
+		range = maxval - minval;
 		val = brightness->value();
-		val = div_round(static_cast<int64_t>(val) * 100,
-				static_cast<int64_t>(maxval - minval));
+		if (range) {
+			val = div_round(static_cast<int64_t>(val) * 100,
+					static_cast<int64_t>(range));
+		} else
+			val = 0;
 		err = tray->getBackend()->setBacklightAutodim(true, on_ac, val);
 		if (err)
 			cerr << "Failed to enable auto-dimming" << endl;
