@@ -1,7 +1,10 @@
 CC		?= gcc
 INSTALL		?= install
 
-CFLAGS		+= -g -O2 -flto -Wall
+CFLAGS		+= -g -O2 -flto -Wall -Wextra -Wswitch-enum \
+		   -Wsuggest-attribute=noreturn -Wundef \
+		   -Wpointer-arith -Winline -Wlogical-op -Wshadow \
+		   -Wno-unused-parameter -Wno-missing-field-initializers
 LDFLAGS		?=
 LIBS		?= -lX11 -lXi
 DESTDIR		?=

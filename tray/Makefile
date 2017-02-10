@@ -5,7 +5,11 @@ INSTALL		?= install
 QT_INCDIR	?= /usr/include
 QT_LIBDIR	?= /usr/lib
 
-CXXFLAGS	+= -g -O2 -flto -fno-exceptions -Wall \
+CXXFLAGS	+= -g -O2 -flto -fno-exceptions \
+		   -Wall -Wextra -Wswitch-enum \
+		   -Wsuggest-attribute=noreturn -Wundef \
+		   -Wpointer-arith -Winline -Wlogical-op -Wshadow \
+		   -Wno-unused-parameter -Wno-missing-field-initializers \
 		   -I$(QT_INCDIR) \
 		   -I$(QT_INCDIR)/QtCore \
 		   -I$(QT_INCDIR)/QtGui \
