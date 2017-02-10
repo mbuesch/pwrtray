@@ -415,8 +415,8 @@ void autodim_set_max_percent(struct autodim *ad, int max_percent)
 	if (max_percent < 0)
 		max_percent = 100;
 	max_percent = clamp(max_percent, 0, 100);
-	if (ad->max_percent != max_percent) {
-		ad->max_percent = max_percent;
+	if (ad->max_percent != (unsigned int)max_percent) {
+		ad->max_percent = (unsigned int)max_percent;
 		autodim_handle_input_event(ad);
 	}
 }

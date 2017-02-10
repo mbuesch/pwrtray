@@ -50,9 +50,9 @@ static int battery_powerbook_update(struct battery *b)
 
 		if (strcmp(id, "AC Power") == 0) {
 			if (sscanf(elem, "%u", &value) == 1) {
-				if (value != bp->on_ac)
+				if ((int)value != bp->on_ac)
 					value_changed = 1;
-				bp->on_ac = value;
+				bp->on_ac = (int)value;
 				got_ac = 1;
 			}
 		}
@@ -80,17 +80,17 @@ static int battery_powerbook_update(struct battery *b)
 
 		if (strcmp(id, "max_charge") == 0) {
 			if (sscanf(elem, "%u", &value) == 1) {
-				if (value != bp->max_charge)
+				if ((int)value != bp->max_charge)
 					value_changed = 1;
-				bp->max_charge = value;
+				bp->max_charge = (int)value;
 				got_max_chg = 1;
 			}
 		}
 		if (strcmp(id, "charge") == 0) {
 			if (sscanf(elem, "%u", &value) == 1) {
-				if (value != bp->charge)
+				if ((int)value != bp->charge)
 					value_changed = 1;
-				bp->charge = value;
+				bp->charge = (int)value;
 				got_cur_chg = 1;
 			}
 		}
