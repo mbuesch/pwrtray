@@ -12,10 +12,10 @@
 #define __stringify(x)		#x
 #define stringify(x)		__stringify(x)
 
-#define min(a, b)	({			\
-		__typeof__(a) __a = (a);	\
-		__typeof__(b) __b = (b);	\
-		__a < __b ? __a : __b;		\
+#define min(x, y)	({			\
+		__typeof__(x) __x = (x);	\
+		__typeof__(y) __y = (y);	\
+		__x < __y ? __x : __y;		\
 	})
 
 #define max(a, b)	({			\
