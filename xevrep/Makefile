@@ -3,8 +3,6 @@ include ../make.inc
 CFLAGS		+= $(BASE_CFLAGS) -flto $(WARN_CFLAGS)
 LDFLAGS		?=
 LIBS		?= -lX11 -lXi
-DESTDIR		?=
-PREFIX		?= /usr/local
 
 BIN		= pwrtray-xevrep
 SRCS		= main.c

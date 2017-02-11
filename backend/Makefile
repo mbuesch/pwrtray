@@ -3,8 +3,6 @@ include ../make.inc
 CFLAGS		+= $(BASE_CFLAGS) $(WARN_CFLAGS)
 LDFLAGS		?=
 LIBS		?= -lrt -lm
-DESTDIR		?=
-PREFIX		?= /usr/local
 
 BIN		:= pwrtray-backend
 

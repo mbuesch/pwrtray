@@ -2,6 +2,9 @@ CC		:= cc
 CXX		:= c++
 INSTALL		:= install
 
+DESTDIR		:=
+PREFIX		:= /usr/local
+
 WARN_CFLAGS	:= -Wall -Wextra -Wswitch-enum \
 		   -Wsuggest-attribute=noreturn -Wundef \
 		   -Wpointer-arith -Winline -Wlogical-op -Wshadow \

@@ -16,8 +16,6 @@ CXXFLAGS	+= $(BASE_CXXFLAGS) -flto -fno-exceptions $(WARN_CXXFLAGS) \
 LDFLAGS		?= -L$(QT_LIBDIR) \
 		   -L$(QT_LIBDIR)/qt4
 LIBS		?= -lQtCore -lQtGui
-DESTDIR		?=
-PREFIX		?= /usr/local
 
 BIN		= pwrtray
 SRCS		= main.cpp backend.cpp util.cpp
