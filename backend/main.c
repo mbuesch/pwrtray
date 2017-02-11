@@ -378,8 +378,10 @@ static void remove_socket(void)
 static int create_pidfile(void)
 {
 	char buf[32] = { 0, };
+	const char *write_ptr;
 	pid_t pid = getpid();
 	int fd;
+	size_t count;
 	ssize_t res;
 
 	if (!cmdargs.pidfile)
@@ -393,12 +395,17 @@ static int create_pidfile(void)
 	}
 	snprintf(buf, sizeof(buf), "%lu",
 		 (unsigned long)pid);
-	res = write(fd, buf, strlen(buf));
-	close(fd);
-	if (res != strlen(buf)) {
-		logerr("Failed to write PID-file %s: %s\n",
-		       cmdargs.pidfile, strerror(errno));
-		return -1;
+	count = strlen(buf);
+	write_ptr = buf;
+	while (count) {
+		res = write(fd, write_ptr, count);
+		if (res < 0) {
+			logerr("Failed to write PID-file %s: %s\n",
+			       cmdargs.pidfile, strerror(errno));
+			return -1;
+		}
+		count -= (size_t)res;
+		write_ptr += (size_t)res;
 	}
 
 	return 0;
