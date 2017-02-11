@@ -153,16 +153,13 @@ int file_read_string(struct fileaccess *fa, char *buf, size_t size)
 int file_read_int(struct fileaccess *fa, int *value, int base)
 {
 	char buf[64];
-	ssize_t count;
+	int count;
 	long val;
 	char *tail;
 
-	file_rewind(fa);
-	count = read(fa->fd, buf, sizeof(buf) - 1);
+	count = file_read_buf(fa, buf, sizeof(buf) - 1);
 	if (count < 0)
-		return -errno;
-	if (!count)
-		return -ETXTBSY;
+		return count;
 	buf[count] = '\0';
 
 	errno = 0;
@@ -177,8 +174,10 @@ int file_read_int(struct fileaccess *fa, int *value, int base)
 int file_write_int(struct fileaccess *fa, int value, int base)
 {
 	char buf[64];
+	const char *buf_ptr;
 	const char *fmt;
-	ssize_t count;
+	size_t count;
+	ssize_t res;
 
 	if (base == 0 || base == 10)
 		fmt = "%d";
@@ -188,10 +187,17 @@ int file_write_int(struct fileaccess *fa, int value, int base)
 		return -EINVAL;
 
 	snprintf(buf, sizeof(buf), fmt, value);
+
 	file_rewind(fa);
-	count = write(fa->fd, buf, strlen(buf));
-	if (count != strlen(buf))
-		return -ETXTBSY;
+	count = strlen(buf);
+	buf_ptr = buf;
+	while (count) {
+		res = write(fa->fd, buf_ptr, count);
+		if (res < 0)
+			return -ETXTBSY;
+		count -= (size_t)res;
+		buf_ptr += (size_t)res;
+	}
 
 	return 0;
 }
