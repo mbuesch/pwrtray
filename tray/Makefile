@@ -1,24 +1,20 @@
-CXX		?= g++
+include ../make.inc
+
 MOC		?= moc-qt4
-INSTALL		?= install
 
 QT_INCDIR	?= /usr/include
 QT_LIBDIR	?= /usr/lib
 
-CXXFLAGS	+= -g -O2 -flto -fno-exceptions \
-		   -Wall -Wextra -Wswitch-enum \
-		   -Wsuggest-attribute=noreturn -Wundef \
-		   -Wpointer-arith -Winline -Wlogical-op -Wshadow \
-		   -Wno-unused-parameter -Wno-missing-field-initializers \
+CXXFLAGS	+= $(BASE_CXXFLAGS) -flto -fno-exceptions $(WARN_CXXFLAGS) \
 		   -I$(QT_INCDIR) \
 		   -I$(QT_INCDIR)/QtCore \
 		   -I$(QT_INCDIR)/QtGui \
 		   -I$(QT_INCDIR)/qt4 \
 		   -I$(QT_INCDIR)/qt4/QtCore \
-		   -I$(QT_INCDIR)/qt4/QtGui
-CXXFLAGS	+= -DNULL=0 -DPREFIX=$(PREFIX)
+		   -I$(QT_INCDIR)/qt4/QtGui \
+		   -DNULL=0
 LDFLAGS		?= -L$(QT_LIBDIR) \
-		  -L$(QT_LIBDIR)/qt4
+		   -L$(QT_LIBDIR)/qt4
 LIBS		?= -lQtCore -lQtGui
 DESTDIR		?=
 PREFIX		?= /usr/local

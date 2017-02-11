@@ -1,19 +1,10 @@
-CC		?= gcc
-INSTALL		?= install
+include ../make.inc
 
-CFLAGS		+= -g -O2 -Wall -Wextra -Wswitch-enum \
-		   -Wsuggest-attribute=noreturn -Wundef \
-		   -Wpointer-arith -Winline -Wlogical-op -Wshadow \
-		   -Wno-unused-parameter -Wno-missing-field-initializers
+CFLAGS		+= $(BASE_CFLAGS) $(WARN_CFLAGS)
 LDFLAGS		?=
 LIBS		?= -lrt -lm
 DESTDIR		?=
 PREFIX		?= /usr/local
-
-CFLAGS		+= -DPREFIX=$(PREFIX) -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE
-CFLAGS          += $(if $(filter 1 y,$(FEATURE_XLOCK)),-DFEATURE_XLOCK=1)
-CFLAGS          += $(if $(filter 1 y,$(FEATURE_XEVREP)),-DFEATURE_XEVREP=1)
-CFLAGS		+= $(if $(filter 1 y,$(PROFILE)),-pg)
 
 BIN		:= pwrtray-backend
 

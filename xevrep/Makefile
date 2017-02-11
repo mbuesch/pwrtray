@@ -1,16 +1,10 @@
-CC		?= gcc
-INSTALL		?= install
+include ../make.inc
 
-CFLAGS		+= -g -O2 -flto -Wall -Wextra -Wswitch-enum \
-		   -Wsuggest-attribute=noreturn -Wundef \
-		   -Wpointer-arith -Winline -Wlogical-op -Wshadow \
-		   -Wno-unused-parameter -Wno-missing-field-initializers
+CFLAGS		+= $(BASE_CFLAGS) -flto $(WARN_CFLAGS)
 LDFLAGS		?=
 LIBS		?= -lX11 -lXi
 DESTDIR		?=
 PREFIX		?= /usr/local
-
-CFLAGS		+= -DPREFIX=$(PREFIX)
 
 BIN		= pwrtray-xevrep
 SRCS		= main.c
