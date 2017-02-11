@@ -8,7 +8,8 @@ PREFIX		:= /usr/local
 WARN_CFLAGS	:= -Wall -Wextra -Wswitch-enum \
 		   -Wsuggest-attribute=noreturn -Wundef \
 		   -Wpointer-arith -Winline -Wlogical-op -Wshadow \
-		   -Wno-unused-parameter -Wno-missing-field-initializers
+		   -Wno-unused-parameter -Wno-missing-field-initializers \
+		   -Wcast-qual
 
 WARN_CXXFLAGS	:= $(WARN_CFLAGS)
 
